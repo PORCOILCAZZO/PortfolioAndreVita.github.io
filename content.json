@@ -7,7 +7,7 @@
       "id": "banana",
       "title": "Circonvalley",
       "subtitle": "Cycling Community",
-      "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
+      "description": "Cambiare le descrizioni",
       "model": {
         "kind": "glb",
         "src": "assets/models/banana-mwuyzysyi0hr/model.glb",
@@ -20,6 +20,7 @@
       },
       "dragDir": -1,
       "images": [
+        "assets/images/banana-mwuz5wsoz2ci.jpg",
         "assets/images/banana-mwuz5vjy4tt9.jpg",
         "assets/images/banana-mwuz5vlbnyxw.jpg",
         "assets/images/banana-mwuz5vmcu9sb.jpg",
@@ -53,8 +54,7 @@
         "assets/images/banana-mwuz5wn3366f.jpg",
         "assets/images/banana-mwuz5wo22rmm.jpg",
         "assets/images/banana-mwuz5wq4y7w2.jpg",
-        "assets/images/banana-mwuz5wrlwn1g.jpg",
-        "assets/images/banana-mwuz5wsoz2ci.jpg"
+        "assets/images/banana-mwuz5wrlwn1g.jpg"
       ]
     },
     {
