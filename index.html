@@ -114,8 +114,8 @@
       pointer-events: none;
       font-family: var(--font);
     }
-    .caption.top { top: 50px; }
-    .caption.bottom { bottom: 125px; }  /* il testo parte dal bordo inferiore e cresce verso l'alto */
+    .caption.top { top: 100px; }
+    .caption.bottom { bottom: 100px; }  /* il testo parte dal bordo inferiore e cresce verso l'alto */
     .caption h2 {
       margin: 0; font-size: clamp(2.8rem, 6vw, 4rem);
       font-weight: 700; text-transform: uppercase; letter-spacing: -0.02em; line-height: 1;
@@ -125,7 +125,7 @@
 
     /* Controlli in basso a destra: Reset sopra, zoom sotto */
     .controls {
-      position: absolute; right: max(24px, calc((100% - 760px) / 2)); bottom: 125px;
+      position: absolute; right: max(24px, calc((100% - 760px) / 2)); bottom: 100px;
       display: flex; flex-direction: column; align-items: stretch; gap: 8px; z-index: 2;
     }
     .zoom { display: flex; gap: 8px; }
