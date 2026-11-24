@@ -32,9 +32,9 @@
         "assets/images/banana-mwv24medu8zu.jpg",
         "assets/images/banana-mwv24mf368u9.jpg"
       ],
-      "pageTitle": "Banana",
-      "pageSubtitle": "Pagina del progetto",
-      "pageDescription": "Testo esteso del progetto: racconta qui contesto, processo e risultati. Si modifica dall'admin, separato dal testo della home."
+      "pageTitle": "",
+      "pageSubtitle": "",
+      "pageDescription": ""
     },
     {
       "id": "mela",
@@ -74,9 +74,9 @@
         "assets/images/mela-mwv252am56hc.jpg",
         "assets/images/mela-mwv252b8wxvf.jpg"
       ],
-      "pageTitle": "Mela",
-      "pageSubtitle": "Pagina del progetto",
-      "pageDescription": "Testo esteso del progetto: racconta qui contesto, processo e risultati. Si modifica dall'admin, separato dal testo della home."
+      "pageTitle": "",
+      "pageSubtitle": "",
+      "pageDescription": ""
     }
   ],
   "contacts": {
