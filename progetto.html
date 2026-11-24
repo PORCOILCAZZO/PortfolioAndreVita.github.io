@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Progetto</title>
+  <style>
+    @font-face {
+      font-family: "Broadsheet";
+      src: url("fonts/Broadsheet.woff2") format("woff2"),
+           url("fonts/Broadsheet.woff") format("woff"),
+           url("fonts/Broadsheet.otf") format("opentype"),
+           url("fonts/Broadsheet.ttf") format("truetype");
+      font-display: swap;
+    }
+    :root {
+      --font: "Broadsheet", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --helv: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #000; color: #fff; overflow: hidden; }
+    body { font-family: var(--font); }
+
+    /* La pagina nasce nera (la transizione dal modello finisce nel nero) e poi appare il contenuto */
+    #page { position: fixed; inset: 0; animation: appear 1.1s ease .15s both; }
+    html.embed #page { animation: none; }
+    @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+
+    #sphere { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+    #sphere.dragging { cursor: grabbing; }
+
+    .back {
+      position: absolute; top: 20px; left: 24px; z-index: 3;
+      color: #fff; text-decoration: none; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;
+      mix-blend-mode: difference;
+    }
+    .back:hover { text-decoration: underline; text-underline-offset: 6px; }
+
+    /* Testi in bianco (stessa impostazione dei cartigli della landing) */
+    .caption {
+      position: absolute; left: max(24px, calc((100% - 760px) / 2)); padding: 0 4px;
+      max-width: min(480px, 60%); pointer-events: none; z-index: 2;
+      mix-blend-mode: difference;   /* resta leggibile anche sopra le immagini chiare */
+    }
+    .caption.top { top: 75px; }
+    .caption.bottom { bottom: 60px; }
+    .caption h1 {
+      margin: 0; font-size: clamp(2.8rem, 6vw, 4rem);
+      font-weight: 700; text-transform: uppercase; letter-spacing: -0.02em; line-height: 1;
+    }
+    .caption h2 { margin: 8px 0 0; font-size: 1rem; font-weight: 400; color: #ddd; }
+    .caption p { margin: 0; font-size: .95rem; line-height: 1.45; color: #fff; }
+
+    .controls { position: absolute; right: max(24px, calc((100% - 760px) / 2)); bottom: 60px; display: flex; gap: 8px; z-index: 3; mix-blend-mode: difference; }
+    .btn {
+      width: 40px; height: 40px; padding: 0; background: #fff; color: #000; border: 0; outline: 0; border-radius: 4px;
+      font-family: var(--helv); font-weight: 700; font-size: 1.4rem; line-height: 1; cursor: pointer;
+    }
+    .btn:hover { background: #ddd; }
+    .btn:focus-visible { box-shadow: 0 0 0 2px #fff; }
+    #empty { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; font-family: var(--helv); color: #aaa; z-index: 1; }
+  </style>
+</head>
+<body>
+  <div id="page">
+    <canvas id="sphere"></canvas>
+    <a class="back" id="back" href="index.html">&larr; Indietro</a>
+    <div class="caption top"><h1 id="title"></h1><h2 id="subtitle"></h2></div>
+    <div class="caption bottom"><p id="description"></p></div>
+    <div class="controls">
+      <button class="btn" id="zoom-out" type="button" aria-label="Riduci">&minus;</button>
+      <button class="btn" id="zoom-in" type="button" aria-label="Ingrandisci">+</button>
+    </div>
+    <div id="empty">Nessuna immagine caricata</div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const params = new URLSearchParams(location.search);
+    const id = params.get('p');
+
+    const res = await fetch('content.json?v=' + Date.now(), { cache: 'no-store' });
+    const content = await res.json();
+    const projects = content.projects || [];
+    let index = projects.findIndex((p) => p.id === id);
+    if (index < 0) index = 0;
+    const project = projects[index] || { title: '', images: [] };
+
+    document.title = (project.title || 'Progetto') + ' — ' + ((content.site && content.site.title) || '');
+    document.getElementById('title').textContent = project.title || '';
+    document.getElementById('subtitle').textContent = project.subtitle || '';
+    document.getElementById('description').textContent = project.description || '';
+    document.getElementById('back').href = 'index.html#' + (index === 0 ? 'progetti' : project.id);
+    /* Se la pagina è aperta dentro la landing (iframe) il tasto indietro la richiude con una dissolvenza */
+    const EMBED = new URLSearchParams(location.search).has('embed') && window.parent !== window;
+    if (EMBED) {
+      document.documentElement.classList.add('embed');
+      document.getElementById('back').addEventListener('click', (e) => { e.preventDefault(); window.parent.postMessage('close-project', '*'); });
+    }
+    let pending = 0, readySent = false;
+    const markReady = () => { if (EMBED && !readySent) { readySent = true; window.parent.postMessage('project-ready', '*'); } };
+    setTimeout(markReady, 3000);                                    // non faccio aspettare troppo se qualche immagine è lenta
+
+    /* ================= Sfera di immagini =================
+       La camera sta ESATTAMENTE al centro (0,0,0) e non si sposta mai.
+       Trascinando si ruota la sfera (senza limiti), con la rotella / i tasti / il pinch si cambia il campo visivo (zoom). */
+    const R = 10;                                   // raggio della sfera
+    const canvas = document.getElementById('sphere');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(95, 1, 0.1, 100);
+    camera.position.set(0, 0, 0);
+
+    const world = new THREE.Group();
+    scene.add(world);
+
+    // Superficie interna della sfera: reticolo bianco molto tenue
+    world.add(new THREE.Mesh(
+      new THREE.SphereGeometry(R * 1.03, 48, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.07 })
+    ));
+
+    /* ---- Immagini: tutte 3:4 e della stessa dimensione ---- */
+    const images = project.images || [];
+    document.getElementById('empty').style.display = images.length ? 'none' : 'flex';
+
+    const N = images.length;
+    const GAP = 0.15;                                                // distanza minima tra le tessere (unità della sfera, ~pochi pixel)
+    const MAX_LAT = THREE.MathUtils.degToRad(72);
+
+    /* Anelli (circonferenze): prima quella equatoriale, poi sopra e sotto in alternanza (+1, -1, +2, -2...), ma solo a
+       anello pieno. In ogni anello le tessere stanno alla distanza minima (GAP) l'una dall'altra.
+       Distanza tra i bordi di due tessere vicine, a passo angolare D su un anello di raggio r: 2r·sin(D/2) − w·cos(D/2) */
+    function buildRings(w, h) {
+      const step = (h + GAP) / R;                                    // passo verticale tra anelli (radianti)
+      const rings = [];
+      for (let k = 0; ; k++) {
+        for (const sign of (k === 0 ? [0] : [1, -1])) {
+          const lat = sign * k * step;
+          if (Math.abs(lat) > MAX_LAT) return rings;
+          const r = R * Math.cos(lat);
+          const a = 2 * r, b = w;
+          const x = Math.atan2(b, a) + Math.asin(Math.min(1, GAP / Math.hypot(a, b)));
+          const D = 2 * x;
+          rings.push({ lat, D, cap: Math.max(1, Math.floor(2 * Math.PI / D + 1e-9)) });
+        }
+      }
+    }
+    let TILE_W = R * 0.5, rings;
+    for (let guard = 0; guard < 60; guard++) {                       // se le immagini sono troppe, rimpicciolisco le tessere
+      rings = buildRings(TILE_W, TILE_W * 4 / 3);
+      if (rings.reduce((t, r) => t + r.cap, 0) >= N) break;
+      TILE_W *= 0.93;
+    }
+    const TILE_H = TILE_W * 4 / 3;                                   // ratio 3/4
+    const tileGeo = new THREE.PlaneGeometry(TILE_W, TILE_H);
+    // assegno le immagini agli anelli nell'ordine: equatore, +1, -1, +2, -2...
+    const slots = [];
+    let left = N;
+    for (const ring of rings) {
+      const n = Math.min(left, ring.cap);
+      for (let i = 0; i < n; i++) slots.push({ lat: ring.lat, lon: (i - (n - 1) / 2) * ring.D });   // anello centrato davanti a chi guarda
+      left -= n;
+      if (left <= 0) break;
+    }
+    const loader = new THREE.TextureLoader();
+    pending = images.length;
+    if (!pending) requestAnimationFrame(markReady);
+    const done = () => { if (--pending <= 0) requestAnimationFrame(markReady); };
+
+    images.forEach((src, i) => {
+      if (!slots[i]) { done(); return; }
+      const { lat, lon } = slots[i];
+      const mat = new THREE.MeshBasicMaterial({ color: 0x151515 });
+      const tile = new THREE.Mesh(tileGeo, mat);
+      tile.position.set(Math.sin(lon) * Math.cos(lat), Math.sin(lat), -Math.cos(lon) * Math.cos(lat)).multiplyScalar(R);
+      tile.lookAt(0, 0, 0);                                           // il lato visibile guarda verso il centro
+      world.add(tile);
+
+      loader.load(src, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = 8;
+        // "cover": ritaglia al 3:4 senza deformare l'immagine
+        const a = tex.image.width / tex.image.height;
+        if (a > 0.75) { tex.repeat.x = 0.75 / a; tex.offset.x = (1 - tex.repeat.x) / 2; }
+        else { tex.repeat.y = a / 0.75; tex.offset.y = (1 - tex.repeat.y) / 2; }
+        mat.map = tex; mat.color.set(0xffffff); mat.needsUpdate = true;
+        done();
+      }, undefined, () => { console.warn('Immagine non trovata:', src); done(); });
+    });
+
+    /* ---- Orientamento: solo destra/sinistra (yaw) e su/giù (pitch). L'orizzonte resta sempre dritto, niente rollio ----
+       1 dito / mouse: trascina la vista. 2 dita: pizzico = zoom, spostare le dita insieme = guarda in giro. */
+    const FOV_MIN = 25, FOV_MAX = 95;
+    const PITCH_MAX = THREE.MathUtils.degToRad(85);
+    let fovTarget = 95;
+    let yaw = 0, pitch = 0;               // angoli della sfera (radianti)
+    let vYaw = 0, vPitch = 0;             // velocità per l'inerzia
+    const qYaw = new THREE.Quaternion(), qPitch = new THREE.Quaternion();
+    const AX_Y = new THREE.Vector3(0, 1, 0), AX_X = new THREE.Vector3(1, 0, 0);
+    let dragging = false;
+    const pointers = new Map();
+    let pinch = null;
+    let last = { x: 0, y: 0 };
+    let lastMove = 0;
+
+    function applyOrientation() {
+      pitch = THREE.MathUtils.clamp(pitch, -PITCH_MAX, PITCH_MAX);
+      qYaw.setFromAxisAngle(AX_Y, yaw);
+      qPitch.setFromAxisAngle(AX_X, pitch);
+      world.quaternion.copy(qPitch).multiply(qYaw);        // prima ruota attorno alla verticale, poi si inclina: mai storta
+    }
+    // quanti radianti corrispondono a un pixel di trascinamento (dipende dallo zoom): il contenuto segue il dito
+    const radPerPx = () => THREE.MathUtils.degToRad(camera.fov) / Math.max(1, canvas.clientHeight);
+    function look(dx, dy) {
+      const k = radPerPx();
+      vYaw = -dx * k; vPitch = -dy * k;
+      yaw += vYaw; pitch += vPitch;
+      lastMove = performance.now();
+      applyOrientation();
+    }
+    function twoFingers() {
+      const [a, b] = [...pointers.values()];
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)) };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      canvas.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      vYaw = vPitch = 0;
+      if (pointers.size === 1) {
+        dragging = true; canvas.classList.add('dragging');
+        last = { x: e.clientX, y: e.clientY };
+      } else if (pointers.size === 2) {
+        dragging = false;
+        const f = twoFingers();
+        pinch = { d: f.d, fov: fovTarget, x: f.x, y: f.y };
+      }
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 2 && pinch) {
+        const f = twoFingers();
+        fovTarget = THREE.MathUtils.clamp(pinch.fov * (pinch.d / f.d), FOV_MIN, FOV_MAX);   // zoom
+        look(f.x - pinch.x, f.y - pinch.y);                                                 // le dita guidano la vista
+        pinch.x = f.x; pinch.y = f.y;
+        return;
+      }
+      if (!dragging) return;
+      look(e.clientX - last.x, e.clientY - last.y);
+      last = { x: e.clientX, y: e.clientY };
+    });
+    function endPointer(e) {
+      pointers.delete(e.pointerId);
+      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      pinch = null;
+      if (performance.now() - lastMove > 80) vYaw = vPitch = 0;   // dito fermo prima di sollevarlo: niente inerzia
+      if (pointers.size === 0) { dragging = false; canvas.classList.remove('dragging'); }
+      else if (pointers.size === 1) {                     // dopo i due diti, il dito rimasto continua a trascinare
+        const [p] = [...pointers.values()];
+        dragging = true; last = { x: p.x, y: p.y }; vYaw = vPitch = 0;
+      }
+    }
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', endPointer);
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      fovTarget = THREE.MathUtils.clamp(fovTarget * Math.exp(e.deltaY * 0.0012), FOV_MIN, FOV_MAX);
+    }, { passive: false });
+    const STEP = 1.25;
+    document.getElementById('zoom-in').addEventListener('click', () => { fovTarget = THREE.MathUtils.clamp(fovTarget / STEP, FOV_MIN, FOV_MAX); });
+    document.getElementById('zoom-out').addEventListener('click', () => { fovTarget = THREE.MathUtils.clamp(fovTarget * STEP, FOV_MIN, FOV_MAX); });
+
+    function resize() {
+      const w = window.innerWidth, h = window.innerHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const dt = Math.min(clock.getDelta(), 0.1);
+      if (!dragging && pointers.size === 0 && (Math.abs(vYaw) > 1e-5 || Math.abs(vPitch) > 1e-5)) {   // inerzia
+        yaw += vYaw; pitch += vPitch;
+        vYaw *= 0.94; vPitch *= 0.94;
+        applyOrientation();
+      }
+      const f = camera.fov + (fovTarget - camera.fov) * (1 - Math.pow(0.0005, dt));
+      if (Math.abs(f - camera.fov) > 1e-4) { camera.fov = f; camera.updateProjectionMatrix(); }
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+</html>
