@@ -163,45 +163,52 @@
       }, undefined, () => console.warn('Immagine non trovata:', src));
     });
 
-    /* ---- Rotazione: la sfera segue il dito/mouse, senza limiti ----
-       1 dito / mouse: trascina la sfera.
-       2 dita: pizzico = zoom, spostare le dita insieme = ruota la sfera, girare le dita = fa ruotare la sfera su sé stessa (rollio). */
+    /* ---- Orientamento: solo destra/sinistra (yaw) e su/giù (pitch). L'orizzonte resta sempre dritto, niente rollio ----
+       1 dito / mouse: trascina la vista. 2 dita: pizzico = zoom, spostare le dita insieme = guarda in giro. */
     const FOV_MIN = 25, FOV_MAX = 95;
+    const PITCH_MAX = THREE.MathUtils.degToRad(85);
     let fovTarget = 65;
-    const identity = new THREE.Quaternion();
-    const spin = new THREE.Quaternion();
-    const dq = new THREE.Quaternion();
-    const roll = new THREE.Quaternion();
-    const Z_AXIS = new THREE.Vector3(0, 0, 1);
-    const prevDir = new THREE.Vector3(), currDir = new THREE.Vector3();
+    let yaw = 0, pitch = 0;               // angoli della sfera (radianti)
+    let vYaw = 0, vPitch = 0;             // velocità per l'inerzia
+    const qYaw = new THREE.Quaternion(), qPitch = new THREE.Quaternion();
+    const AX_Y = new THREE.Vector3(0, 1, 0), AX_X = new THREE.Vector3(1, 0, 0);
     let dragging = false;
     const pointers = new Map();
     let pinch = null;
+    let last = { x: 0, y: 0 };
+    let lastMove = 0;
 
-    // direzione (nello spazio della camera) del raggio che passa per il punto dello schermo
-    function rayDir(x, y, out) {
-      const rect = canvas.getBoundingClientRect();
-      const nx = ((x - rect.left) / rect.width) * 2 - 1;
-      const ny = -(((y - rect.top) / rect.height) * 2 - 1);
-      const t = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
-      return out.set(nx * t * camera.aspect, ny * t, -1).normalize();
+    function applyOrientation() {
+      pitch = THREE.MathUtils.clamp(pitch, -PITCH_MAX, PITCH_MAX);
+      qYaw.setFromAxisAngle(AX_Y, yaw);
+      qPitch.setFromAxisAngle(AX_X, pitch);
+      world.quaternion.copy(qPitch).multiply(qYaw);        // prima ruota attorno alla verticale, poi si inclina: mai storta
+    }
+    // quanti radianti corrispondono a un pixel di trascinamento (dipende dallo zoom): il contenuto segue il dito
+    const radPerPx = () => THREE.MathUtils.degToRad(camera.fov) / Math.max(1, canvas.clientHeight);
+    function look(dx, dy) {
+      const k = radPerPx();
+      vYaw = -dx * k; vPitch = -dy * k;
+      yaw += vYaw; pitch += vPitch;
+      lastMove = performance.now();
+      applyOrientation();
     }
     function twoFingers() {
       const [a, b] = [...pointers.values()];
-      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), ang: Math.atan2(b.y - a.y, b.x - a.x) };
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)) };
     }
 
     canvas.addEventListener('pointerdown', (e) => {
       canvas.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      spin.copy(identity);
+      vYaw = vPitch = 0;
       if (pointers.size === 1) {
         dragging = true; canvas.classList.add('dragging');
-        rayDir(e.clientX, e.clientY, prevDir);
+        last = { x: e.clientX, y: e.clientY };
       } else if (pointers.size === 2) {
         dragging = false;
         const f = twoFingers();
-        pinch = { d: f.d, fov: fovTarget, ang: f.ang, dir: rayDir(f.x, f.y, new THREE.Vector3()) };
+        pinch = { d: f.d, fov: fovTarget, x: f.x, y: f.y };
       }
     });
     canvas.addEventListener('pointermove', (e) => {
@@ -210,30 +217,23 @@
       if (pointers.size === 2 && pinch) {
         const f = twoFingers();
         fovTarget = THREE.MathUtils.clamp(pinch.fov * (pinch.d / f.d), FOV_MIN, FOV_MAX);   // zoom
-        rayDir(f.x, f.y, currDir);
-        dq.setFromUnitVectors(pinch.dir, currDir);                                          // le dita trascinano la sfera
-        let dA = f.ang - pinch.ang;
-        if (dA > Math.PI) dA -= 2 * Math.PI; else if (dA < -Math.PI) dA += 2 * Math.PI;
-        roll.setFromAxisAngle(Z_AXIS, -dA);                                                 // le dita girano la sfera
-        world.quaternion.premultiply(roll).premultiply(dq).normalize();
-        pinch.dir.copy(currDir); pinch.ang = f.ang;
+        look(f.x - pinch.x, f.y - pinch.y);                                                 // le dita guidano la vista
+        pinch.x = f.x; pinch.y = f.y;
         return;
       }
       if (!dragging) return;
-      rayDir(e.clientX, e.clientY, currDir);
-      dq.setFromUnitVectors(prevDir, currDir);            // il contenuto sotto il cursore segue il cursore
-      world.quaternion.premultiply(dq).normalize();
-      spin.copy(dq);
-      prevDir.copy(currDir);
+      look(e.clientX - last.x, e.clientY - last.y);
+      last = { x: e.clientX, y: e.clientY };
     });
     function endPointer(e) {
       pointers.delete(e.pointerId);
       if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
       pinch = null;
+      if (performance.now() - lastMove > 80) vYaw = vPitch = 0;   // dito fermo prima di sollevarlo: niente inerzia
       if (pointers.size === 0) { dragging = false; canvas.classList.remove('dragging'); }
       else if (pointers.size === 1) {                     // dopo i due diti, il dito rimasto continua a trascinare
         const [p] = [...pointers.values()];
-        dragging = true; rayDir(p.x, p.y, prevDir); spin.copy(identity);
+        dragging = true; last = { x: p.x, y: p.y }; vYaw = vPitch = 0;
       }
     }
     canvas.addEventListener('pointerup', endPointer);
@@ -259,9 +259,10 @@
     const clock = new THREE.Clock();
     renderer.setAnimationLoop(() => {
       const dt = Math.min(clock.getDelta(), 0.1);
-      if (!dragging && pointers.size === 0) {              // inerzia
-        world.quaternion.premultiply(spin).normalize();
-        spin.slerp(identity, 0.05);
+      if (!dragging && pointers.size === 0 && (Math.abs(vYaw) > 1e-5 || Math.abs(vPitch) > 1e-5)) {   // inerzia
+        yaw += vYaw; pitch += vPitch;
+        vYaw *= 0.94; vPitch *= 0.94;
+        applyOrientation();
       }
       const f = camera.fov + (fovTarget - camera.fov) * (1 - Math.pow(0.0005, dt));
       if (Math.abs(f - camera.fov) > 1e-4) { camera.fov = f; camera.updateProjectionMatrix(); }
