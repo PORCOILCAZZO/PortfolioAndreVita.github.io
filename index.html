@@ -104,8 +104,10 @@
       padding: 90px 24px 40px;
     }
     .stage { position: relative; width: 100%; max-width: 760px; height: min(70vh, 640px); }
-    .stage canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
-    .stage canvas.dragging { cursor: grabbing; }
+    .stage canvas { width: 100%; height: 100%; display: block; pointer-events: none; }
+    /* Area attiva per ruotare: da 20px sotto il sottotitolo a 20px sopra la descrizione (top/bottom calcolati in JS) */
+    .hit { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 1; cursor: grab; touch-action: none; }
+    .hit.dragging { cursor: grabbing; }
     .hint { margin-top: 12px; text-align: center; font-size: .8rem; color: #666; }
 
     /* Cartiglio del progetto (sopra il canvas, non intercetta il mouse) */
@@ -127,7 +129,7 @@
     /* Controlli in basso a destra: Reset sopra, zoom sotto */
     .controls {
       position: absolute; right: 0; bottom: 0;
-      display: flex; flex-direction: column; align-items: stretch; gap: 8px;
+      display: flex; flex-direction: column; align-items: stretch; gap: 8px; z-index: 2;
     }
     .zoom { display: flex; gap: 8px; }
     .btn {
@@ -181,6 +183,7 @@
     <section id="progetti" class="project">
       <div class="stage" data-model="banana">
         <canvas></canvas>
+        <div class="hit"></div>
         <div class="caption top">
           <h2>Banana</h2>
           <h3>Modello 3D interattivo</h3>
@@ -203,6 +206,7 @@
     <section id="mela" class="project">
       <div class="stage" data-model="apple">
         <canvas></canvas>
+        <div class="hit"></div>
         <div class="caption top">
           <h2>Mela</h2>
           <h3>Modello 3D interattivo</h3>
@@ -396,13 +400,31 @@
     function createViewer(stage) {
       const canvas = stage.querySelector('canvas');
       const resetBtn = stage.querySelector('.reset-btn');
+      const hit = stage.querySelector('.hit');
+      const capTop = stage.querySelector('.caption.top');
+      const capBottom = stage.querySelector('.caption.bottom');
+
+      // L'area di rotazione va da 20px sotto il sottotitolo a 20px sopra la descrizione
+      function layoutHit() {
+        const top = capTop.offsetTop + capTop.offsetHeight + 20;
+        const bottom = stage.clientHeight - capBottom.offsetTop + 20;
+        hit.style.top = top + 'px';
+        hit.style.bottom = Math.max(0, bottom) + 'px';
+      }
+      new ResizeObserver(layoutHit).observe(stage);
+      new ResizeObserver(layoutHit).observe(capTop);
+      new ResizeObserver(layoutHit).observe(capBottom);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutHit);
+      layoutHit();
 
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-      camera.position.set(0, 0, 6.5);
+      const IS_MOBILE = window.matchMedia('(max-width: 600px)').matches;
+      const START_Z = IS_MOBILE ? 13 : 6.5;   // su mobile il modello parte più piccolo (camera a distanza doppia)
+      camera.position.set(0, 0, START_Z);
       scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 1.1));
       const sun = new THREE.DirectionalLight(0xffffff, 1.6);
       sun.position.set(3, 4, 5);
@@ -416,7 +438,7 @@
       scene.add(model);
 
       // Zoom: avvicina/allontana la camera con un movimento morbido
-      const ZOOM_MIN = 3.5, ZOOM_MAX = 12, ZOOM_STEP = 1.25;
+      const ZOOM_MIN = 3.5, ZOOM_MAX = 14, ZOOM_STEP = 1.25;
       let zoomTarget = camera.position.z;
       stage.querySelector('.zoom-in').addEventListener('click', () => {
         zoomTarget = THREE.MathUtils.clamp(zoomTarget / ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
@@ -444,16 +466,16 @@
         return out.set(x, y, z).normalize();
       }
 
-      canvas.addEventListener('pointerdown', (e) => {
+      hit.addEventListener('pointerdown', (e) => {
         state.dragging = true;
         state.resetting = false;
-        canvas.setPointerCapture(e.pointerId);
-        canvas.classList.add('dragging');
+        hit.setPointerCapture(e.pointerId);
+        hit.classList.add('dragging');
         sphereVector(e.clientX, e.clientY, prev);
         spin.copy(identity);
       });
 
-      canvas.addEventListener('pointermove', (e) => {
+      hit.addEventListener('pointermove', (e) => {
         if (!state.dragging) return;
         sphereVector(e.clientX, e.clientY, curr);
         if (dragDir > 0) dq.setFromUnitVectors(curr, prev);
@@ -468,11 +490,11 @@
       function endDrag(e) {
         if (!state.dragging) return;
         state.dragging = false;
-        canvas.classList.remove('dragging');
-        if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+        hit.classList.remove('dragging');
+        if (hit.hasPointerCapture(e.pointerId)) hit.releasePointerCapture(e.pointerId);
       }
-      canvas.addEventListener('pointerup', endDrag);
-      canvas.addEventListener('pointercancel', endDrag);
+      hit.addEventListener('pointerup', endDrag);
+      hit.addEventListener('pointercancel', endDrag);
 
       // Reset: torna alla posizione iniziale e solo ora riparte la rotazione automatica
       resetBtn.addEventListener('click', () => {
