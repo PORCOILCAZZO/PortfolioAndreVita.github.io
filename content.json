@@ -5,25 +5,32 @@
   "projects": [
     {
       "id": "banana",
-      "title": "Banana",
-      "subtitle": "Modello 3D interattivo",
-      "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
+      "title": "circon valley",
+      "subtitle": "comunità bici",
+      "description": "comunity comunity bicicilelete bnici milano",
       "model": {
-        "kind": "builtin",
-        "name": "banana"
+        "kind": "glb",
+        "src": "assets/models/banana-mwv23h5xx6aw/model.glb",
+        "name": "model.glb",
+        "files": [
+          "assets/models/banana-mwv23h5xx6aw/model.glb",
+          "assets/models/banana-mwv23h5xx6aw/tex_u0_v0_diffuse.jpg",
+          "assets/models/banana-mwv23h5xx6aw/tex_u0_v0_normal.jpg"
+        ]
       },
       "dragDir": -1,
       "images": [
-        "assets/images/placeholder-01.jpg",
-        "assets/images/placeholder-02.jpg",
-        "assets/images/placeholder-03.jpg",
-        "assets/images/placeholder-04.jpg",
-        "assets/images/placeholder-05.jpg",
-        "assets/images/placeholder-06.jpg",
-        "assets/images/placeholder-07.jpg",
-        "assets/images/placeholder-08.jpg",
-        "assets/images/placeholder-09.jpg",
-        "assets/images/placeholder-10.jpg"
+        "assets/images/banana-mwv24m6onxfi.jpg",
+        "assets/images/banana-mwv24m8rq3ub.jpg",
+        "assets/images/banana-mwv24m97yq4h.jpg",
+        "assets/images/banana-mwv24ma1mgbo.jpg",
+        "assets/images/banana-mwv24mam5h74.jpg",
+        "assets/images/banana-mwv24mb6j23y.jpg",
+        "assets/images/banana-mwv24mce8w0t.jpg",
+        "assets/images/banana-mwv24mdbw3ud.jpg",
+        "assets/images/banana-mwv24mdpvu33.jpg",
+        "assets/images/banana-mwv24medu8zu.jpg",
+        "assets/images/banana-mwv24mf368u9.jpg"
       ],
       "pageTitle": "Banana",
       "pageSubtitle": "Pagina del progetto",
@@ -31,25 +38,41 @@
     },
     {
       "id": "mela",
-      "title": "Mela",
-      "subtitle": "Modello 3D interattivo",
-      "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
+      "title": "casco poc",
+      "subtitle": "casco da bici",
+      "description": "è un casco raga è un casco se caschi caschi",
       "model": {
-        "kind": "builtin",
-        "name": "apple"
+        "kind": "glb",
+        "src": "assets/models/mela-mwv23msbbysj/model.glb",
+        "name": "model.glb",
+        "files": [
+          "assets/models/mela-mwv23msbbysj/model.glb",
+          "assets/models/mela-mwv23msbbysj/tex_u0_v0_diffuse.jpg",
+          "assets/models/mela-mwv23msbbysj/tex_u0_v0_normal.jpg"
+        ]
       },
       "dragDir": -1,
       "images": [
-        "assets/images/placeholder-06.jpg",
-        "assets/images/placeholder-07.jpg",
-        "assets/images/placeholder-08.jpg",
-        "assets/images/placeholder-09.jpg",
-        "assets/images/placeholder-10.jpg",
-        "assets/images/placeholder-01.jpg",
-        "assets/images/placeholder-02.jpg",
-        "assets/images/placeholder-03.jpg",
-        "assets/images/placeholder-04.jpg",
-        "assets/images/placeholder-05.jpg"
+        "assets/images/mela-mwv251x8kzbs.jpg",
+        "assets/images/mela-mwv251xo8ujv.jpg",
+        "assets/images/mela-mwv251yj37yg.jpg",
+        "assets/images/mela-mwv251z81gi3.jpg",
+        "assets/images/mela-mwv251zzfhd0.jpg",
+        "assets/images/mela-mwv2520wf0zy.jpg",
+        "assets/images/mela-mwv2521suzt2.jpg",
+        "assets/images/mela-mwv25239zkxc.jpg",
+        "assets/images/mela-mwv25241w38g.jpg",
+        "assets/images/mela-mwv2524naqt9.jpg",
+        "assets/images/mela-mwv2525f50ho.jpg",
+        "assets/images/mela-mwv25264wiuv.jpg",
+        "assets/images/mela-mwv2526k5mwk.jpg",
+        "assets/images/mela-mwv25276ilv7.jpg",
+        "assets/images/mela-mwv2527r3viq.jpg",
+        "assets/images/mela-mwv25286svd1.jpg",
+        "assets/images/mela-mwv25292994t.jpg",
+        "assets/images/mela-mwv252a0ht76.jpg",
+        "assets/images/mela-mwv252am56hc.jpg",
+        "assets/images/mela-mwv252b8wxvf.jpg"
       ],
       "pageTitle": "Mela",
       "pageSubtitle": "Pagina del progetto",
