@@ -5,17 +5,17 @@
   "projects": [
     {
       "id": "banana",
-      "title": "CVB",
-      "subtitle": "CVB",
-      "description": "CVB",
+      "title": "Circon valley",
+      "subtitle": "Cycling Community",
+      "description": "Il nostro obiettivo è connettere persone che amano pedalare. Organizziamo eventi e uscite in compagnia, condividiamo idee per nuove avventure e aiutiamo a riparare e costruire biciclette. Circonvalley è nata a Milano e sappiamo che andare in bici in una grande città non è facile, e per questo siamo qui: per aiutare chiunque a trovare la propria strada nel ciclismo.\n\nChe tu sia un pendolare, un bikepacker, un messenger o un ciclista agonista, sei il benvenuto nella nostra community e a far parte di ciò che stiamo creando. ",
       "model": {
         "kind": "glb",
-        "src": "assets/models/banana-mwuzxih2khw1/model.glb",
+        "src": "assets/models/banana-mwv08yskyh0j/model.glb",
         "name": "model.glb",
         "files": [
-          "assets/models/banana-mwuzxih2khw1/model.glb",
-          "assets/models/banana-mwuzxih2khw1/tex_u0_v0_diffuse.jpg",
-          "assets/models/banana-mwuzxih2khw1/tex_u0_v0_normal.jpg"
+          "assets/models/banana-mwv08yskyh0j/model.glb",
+          "assets/models/banana-mwv08yskyh0j/tex_u0_v0_diffuse.jpg",
+          "assets/models/banana-mwv08yskyh0j/tex_u0_v0_normal.jpg"
         ]
       },
       "dragDir": -1,
@@ -40,25 +40,6 @@
         "assets/images/banana-mwuzzheb1cua.jpg",
         "assets/images/banana-mwuzzhf3m3za.jpg",
         "assets/images/banana-mwuzzhfp1yfx.jpg",
-        "assets/images/banana-mwuzzhgdhund.jpg",
-        "assets/images/banana-mwuzzhh2nf5n.jpg",
-        "assets/images/banana-mwuzzhigdrdf.jpg",
-        "assets/images/banana-mwuzzhir1biz.jpg",
-        "assets/images/banana-mwuzzhjcpcbb.jpg",
-        "assets/images/banana-mwuzzhl2i4r0.jpg",
-        "assets/images/banana-mwuzzhlwpgyq.jpg",
-        "assets/images/banana-mwuzzhnic9mc.jpg",
-        "assets/images/banana-mwuzzhoh1i8i.jpg",
-        "assets/images/banana-mwuzzhq9pifg.jpg",
-        "assets/images/banana-mwuzzhqtxirt.jpg",
-        "assets/images/banana-mwuzzhr8z4sj.jpg",
-        "assets/images/banana-mwuzzhs6s9tw.jpg",
-        "assets/images/banana-mwuzzhstsg6y.jpg",
-        "assets/images/banana-mwuzzhtf5egi.jpg",
-        "assets/images/banana-mwuzzhu8rblk.jpg",
-        "assets/images/banana-mwuzzhvu8ips.jpg",
-        "assets/images/banana-mwuzzhwdhued.jpg",
-        "assets/images/banana-mwuzzhww9po0.jpg",
         "assets/images/banana-mwuzzhxfg69t.jpg",
         "assets/images/banana-mwuzzhxxyfiq.jpg",
         "assets/images/banana-mwuzzhyiri57.jpg",
@@ -80,7 +61,7 @@
       ],
       "pageTitle": "",
       "pageSubtitle": "",
-      "pageDescription": "aincvpanvpev\napvnpaevpaevnaov\napoevnpanvoaenvoao\n\n\naevpnaepva"
+      "pageDescription": "Circonvalley è una community ciclistica.\n\nIl nostro obiettivo è connettere persone che amano pedalare. Organizziamo eventi e uscite in compagnia, condividiamo idee per nuove avventure e aiutiamo a riparare e costruire biciclette. Circonvalley è nata a Milano e sappiamo che andare in bici in una grande città non è facile, e per questo siamo qui: per aiutare chiunque a trovare la propria strada nel ciclismo.\n\nChe tu sia un pendolare, un bikepacker, un messenger o un ciclista agonista, sei il benvenuto nella nostra community e a far parte di ciò che stiamo creando. "
     },
     {
       "id": "mela",
@@ -89,12 +70,12 @@
       "description": "Ragazzi non so che dirvi. è un casco , se caschi protege",
       "model": {
         "kind": "glb",
-        "src": "assets/models/mela-mwv07u60ywmp/model.glb",
+        "src": "assets/models/mela-mwv094pf2b4l/model.glb",
         "name": "model.glb",
         "files": [
-          "assets/models/mela-mwv07u60ywmp/model.glb",
-          "assets/models/mela-mwv07u60ywmp/tex_u0_v0_diffuse.jpg",
-          "assets/models/mela-mwv07u60ywmp/tex_u0_v0_normal.jpg"
+          "assets/models/mela-mwv094pf2b4l/model.glb",
+          "assets/models/mela-mwv094pf2b4l/tex_u0_v0_diffuse.jpg",
+          "assets/models/mela-mwv094pf2b4l/tex_u0_v0_normal.jpg"
         ]
       },
       "dragDir": -1,
