@@ -84,12 +84,18 @@
     },
     {
       "id": "mela",
-      "title": "Mela",
-      "subtitle": "Modello 3D interattivo",
-      "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
+      "title": "Casco poc",
+      "subtitle": "è un casco",
+      "description": "Ragazzi non so che dirvi. è un casco , se caschi protege",
       "model": {
-        "kind": "builtin",
-        "name": "apple"
+        "kind": "glb",
+        "src": "assets/models/mela-mwv07u60ywmp/model.glb",
+        "name": "model.glb",
+        "files": [
+          "assets/models/mela-mwv07u60ywmp/model.glb",
+          "assets/models/mela-mwv07u60ywmp/tex_u0_v0_diffuse.jpg",
+          "assets/models/mela-mwv07u60ywmp/tex_u0_v0_normal.jpg"
+        ]
       },
       "dragDir": -1,
       "images": [
