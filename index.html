@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Portfolio AndreVita</title>
   <style>
-    /* Font Broadsheet: metti il file in una cartella "fonts" accanto a index.html
-       (Broadsheet.woff2 consigliato; in alternativa .woff / .otf / .ttf).
+    /* Font Broadsheet: metti il file in "fonts/Broadsheet.woff2" (o .woff / .otf / .ttf).
        Finché il file non c'è, la pagina usa Helvetica come ripiego. */
     @font-face {
       font-family: "Broadsheet";
@@ -18,7 +17,11 @@
       font-style: normal;
       font-display: swap;
     }
-    :root { --fg: #000; --bg: #fff; --font: "Broadsheet", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+    :root {
+      --fg: #000; --bg: #fff;
+      --font: "Broadsheet", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --helv: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     html, body { margin: 0; }
@@ -103,8 +106,9 @@
 
     .stage { position: relative; width: 100%; height: calc(min(70vh, 640px) + 120px); }  /* a tutta larghezza, senza bordi; i viewer si toccano */
     .stage canvas { width: 100%; height: 100%; display: block; pointer-events: none; }
-    /* Area attiva per ruotare: da 20px sotto il sottotitolo a 20px sopra la descrizione (top/bottom calcolati in JS) */
+    /* Area attiva per ruotare/cliccare: da 20px sotto il sottotitolo a 20px sopra la descrizione (top/bottom calcolati in JS) */
     .hit { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 1; cursor: grab; touch-action: none; }
+    .hit.over-model { cursor: pointer; }
     .hit.dragging { cursor: grabbing; }
 
     /* Cartiglio del progetto (sopra il canvas, non intercetta il mouse) */
@@ -123,7 +127,7 @@
     .caption h3 { margin: 8px 0 0; font-size: 1rem; font-weight: 400; color: #333; }
     .caption p { margin: 0; font-size: .95rem; line-height: 1.45; color: #111; }
 
-    /* Controlli in basso a destra: Reset sopra, zoom sotto */
+    /* Controlli in basso a destra: Reset sopra, zoom sotto. Senza outline, testo in Helvetica */
     .controls {
       position: absolute; right: max(24px, calc((100% - 760px) / 2)); bottom: 100px;
       display: flex; flex-direction: column; align-items: stretch; gap: 8px; z-index: 2;
@@ -131,12 +135,13 @@
     .zoom { display: flex; gap: 8px; }
     .btn {
       background: #fff; color: #000;
-      border: 2px solid #000; border-radius: 4px; cursor: pointer;
-      font-family: var(--font);
+      border: 0; outline: 0; border-radius: 4px; cursor: pointer;
+      font-family: var(--helv);
       font-weight: 700; line-height: 1;
       transition: opacity .2s ease, transform .2s ease, background .15s ease;
     }
     .btn:hover { background: #eee; }
+    .btn:focus-visible { box-shadow: 0 0 0 2px #000; }
     .zoom .btn { width: 40px; height: 40px; font-size: 1.4rem; padding: 0; }
     .reset-btn { height: 40px; padding: 0; font-size: .95rem; letter-spacing: .02em;
       opacity: 0; transform: translateY(6px); pointer-events: none; }
@@ -148,13 +153,19 @@
     #contatti h2.title { font-size: clamp(2rem, 5vw, 3rem); margin: 0 0 32px; letter-spacing: -0.02em; }
     #contatti h3 { font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; margin: 32px 0 8px; }
     #contatti p { margin: 0 0 6px; line-height: 1.5; font-size: 1.1rem; }
+    #contatti .note { color: #666; font-size: .9rem; }
     #contatti a { color: var(--fg); }
+
+    /* ---------- Transizione "dentro il modello" ---------- */
+    #enter-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 900; display: none; pointer-events: none; }
+    #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 1000; }
+    #load-error { padding: 120px 24px; font-family: var(--helv); }
   </style>
 </head>
 <body>
 
   <header>
-    <a class="logo" href="#home">Portfolio AndreVita</a>
+    <a class="logo" href="#home" id="logo">Portfolio AndreVita</a>
     <button class="burger" id="burger" aria-label="Apri il menu" aria-expanded="false" aria-controls="menu">
       <span></span><span></span><span></span>
     </button>
@@ -165,97 +176,108 @@
     <a href="#contatti">contatti</a>
   </nav>
 
-  <main>
+  <main id="main">
     <!-- Landing -->
     <section id="home">
-      <h1>Portfolio AndreVita</h1>
+      <h1 id="home-title">Portfolio AndreVita</h1>
       <a class="scroll-arrow" href="#progetti" aria-label="Scorri verso il basso">
         <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 4v15M5 12l7 7 7-7"/>
         </svg>
       </a>
     </section>
-
-    <!-- Progetto 1: BANANA -->
-    <section id="progetti" class="project">
-      <div class="stage" data-model="banana">
-        <canvas></canvas>
-        <div class="hit"></div>
-        <div class="caption top">
-          <h2>Banana</h2>
-          <h3>Modello 3D interattivo</h3>
-        </div>
-        <div class="caption bottom">
-          <p>Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.</p>
-        </div>
-        <div class="controls">
-          <button class="btn reset-btn" type="button">Reset</button>
-          <div class="zoom">
-            <button class="btn zoom-out" type="button" aria-label="Riduci">&minus;</button>
-            <button class="btn zoom-in" type="button" aria-label="Ingrandisci">+</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Progetto 2: MELA -->
-    <section id="mela" class="project">
-      <div class="stage" data-model="apple">
-        <canvas></canvas>
-        <div class="hit"></div>
-        <div class="caption top">
-          <h2>Mela</h2>
-          <h3>Modello 3D interattivo</h3>
-        </div>
-        <div class="caption bottom">
-          <p>Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.</p>
-        </div>
-        <div class="controls">
-          <button class="btn reset-btn" type="button">Reset</button>
-          <div class="zoom">
-            <button class="btn zoom-out" type="button" aria-label="Riduci">&minus;</button>
-            <button class="btn zoom-in" type="button" aria-label="Ingrandisci">+</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Contatti -->
-    <section id="contatti">
-      <div class="contact-wrap">
-        <h2 class="title">Contatti</h2>
-        <p style="color:#666;font-size:.9rem">(Dati placeholder: da sostituire con i tuoi.)</p>
-
-        <h3>Indirizzo</h3>
-        <p>Sua Santità il Papa<br>Palazzo Apostolico<br>00120 Città del Vaticano</p>
-
-        <h3>Sala Stampa della Santa Sede</h3>
-        <p>Via della Conciliazione 54<br>00120 Città del Vaticano</p>
-
-        <h3>Email</h3>
-        <p><a href="mailto:vaticanmedia@spc.va">vaticanmedia@spc.va</a></p>
-
-        <h3>Telefono</h3>
-        <p><a href="tel:+3906698921">+39 06 698 921</a></p>
-      </div>
-    </section>
+    <!-- Le sezioni dei progetti e dei contatti vengono create da content.json -->
   </main>
+
+  <canvas id="enter-canvas"></canvas>
+  <div id="fade"></div>
 
   <script type="importmap">
     {
       "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
       }
     }
   </script>
 
   <script type="module">
     import * as THREE from 'three';
+    import { loadModel } from './js/models.js';
+    import { addClickForMore } from './js/decal.js';
+
+    /* ================= Contenuti (da content.json, modificabile dalla pagina admin) ================= */
+    async function loadContent() {
+      const res = await fetch('content.json?v=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('content.json: ' + res.status);
+      return res.json();
+    }
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text != null) e.textContent = text;
+      return e;
+    }
+
+    function linkLine(parent, line) {
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(line)) {
+        const a = el('a', null, line); a.href = 'mailto:' + line; parent.appendChild(a);
+      } else if (/^\+?[\d\s().-]{7,}$/.test(line)) {
+        const a = el('a', null, line); a.href = 'tel:' + line.replace(/[^\d+]/g, ''); parent.appendChild(a);
+      } else {
+        parent.appendChild(document.createTextNode(line));
+      }
+    }
+
+    function buildProjectSection(project, index) {
+      const section = el('section', 'project');
+      section.id = index === 0 ? 'progetti' : project.id;
+      section.dataset.id = project.id;
+      const stage = el('div', 'stage');
+      stage.appendChild(document.createElement('canvas'));
+      stage.appendChild(el('div', 'hit'));
+
+      const top = el('div', 'caption top');
+      top.appendChild(el('h2', null, project.title || ''));
+      top.appendChild(el('h3', null, project.subtitle || ''));
+      stage.appendChild(top);
+
+      const bottom = el('div', 'caption bottom');
+      bottom.appendChild(el('p', null, project.description || ''));
+      stage.appendChild(bottom);
+
+      const controls = el('div', 'controls');
+      const reset = el('button', 'btn reset-btn', 'Reset'); reset.type = 'button';
+      const zoom = el('div', 'zoom');
+      const zOut = el('button', 'btn zoom-out', '−'); zOut.type = 'button'; zOut.setAttribute('aria-label', 'Riduci');
+      const zIn = el('button', 'btn zoom-in', '+'); zIn.type = 'button'; zIn.setAttribute('aria-label', 'Ingrandisci');
+      zoom.append(zOut, zIn);
+      controls.append(reset, zoom);
+      stage.appendChild(controls);
+
+      section.appendChild(stage);
+      return section;
+    }
+
+    function buildContacts(contacts) {
+      const section = el('section'); section.id = 'contatti';
+      const wrap = el('div', 'contact-wrap');
+      wrap.appendChild(el('h2', 'title', contacts.title || 'Contatti'));
+      if (contacts.note) wrap.appendChild(el('p', 'note', contacts.note));
+      (contacts.blocks || []).forEach((b) => {
+        wrap.appendChild(el('h3', null, b.label || ''));
+        const p = el('p');
+        (b.lines || []).forEach((line, i) => { if (i) p.appendChild(document.createElement('br')); linkLine(p, line); });
+        wrap.appendChild(p);
+      });
+      section.appendChild(wrap);
+      return section;
+    }
 
     /* ================= Menu & header ================= */
     const burger = document.getElementById('burger');
     const menu = document.getElementById('menu');
-
     function setMenu(open) {
       menu.classList.toggle('open', open);
       burger.setAttribute('aria-expanded', String(open));
@@ -263,136 +285,42 @@
     }
     burger.addEventListener('click', () => setMenu(!menu.classList.contains('open')));
     menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
-
-    // Il logo in alto compare solo dopo aver lasciato la landing
     function onScroll() {
       document.body.classList.toggle('scrolled', window.scrollY > window.innerHeight * 0.5);
     }
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
 
-    /* ================= Modelli 3D ================= */
-    function buildBanana() {
-      const along = 80, around = 40;
-      const R = 1.7;
-      const arc = THREE.MathUtils.degToRad(75);
-      const positions = [], colors = [], indices = [];
-      const yellow = new THREE.Color(0xf6d12b);
-      const green = new THREE.Color(0x8a8d2a);
-      const brown = new THREE.Color(0x3b2a14);
-      const c = new THREE.Color();
+    /* Tornando indietro dalla pagina del progetto, riparte pulita (niente nero rimasto in cache) */
+    window.addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); });
 
-      for (let i = 0; i <= along; i++) {
-        const t = i / along;
-        const a = THREE.MathUtils.lerp(-arc, arc, t);
-        const cx = R * Math.sin(a), cy = R * Math.cos(a) - R * 0.75;
-        const N = new THREE.Vector3(Math.sin(a), Math.cos(a), 0);
-        const B = new THREE.Vector3(0, 0, 1);
-
-        const body = 0.46 * Math.pow(Math.sin(Math.PI * t), 0.3);
-        let r = t < 0.5 ? THREE.MathUtils.lerp(0.12, body, THREE.MathUtils.smoothstep(t, 0.04, 0.24)) : body;
-        if (i === 0 || i === along) r = 0;
-
-        if (t < 0.07) c.copy(green);
-        else if (t < 0.2) c.copy(green).lerp(yellow, (t - 0.07) / 0.13);
-        else if (t > 0.965) c.copy(brown);
-        else c.copy(yellow);
-
-        for (let j = 0; j < around; j++) {
-          const th = (j / around) * Math.PI * 2;
-          const rr = r * (1 - 0.09 * Math.cos(5 * th));
-          const p = new THREE.Vector3(cx, cy, 0)
-            .addScaledVector(N, rr * Math.cos(th))
-            .addScaledVector(B, rr * Math.sin(th));
-          positions.push(p.x, p.y, p.z);
-          colors.push(c.r, c.g, c.b);
-        }
-      }
-      for (let i = 0; i < along; i++) {
-        for (let j = 0; j < around; j++) {
-          const a = i * around + j;
-          const b = i * around + (j + 1) % around;
-          const c2 = (i + 1) * around + j;
-          const d = (i + 1) * around + (j + 1) % around;
-          indices.push(a, c2, b, b, c2, d);
-        }
-      }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-      g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      g.setIndex(indices);
-      g.computeVertexNormals();
-      return new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0 }));
-    }
-
-    function buildApple() {
-      const group = new THREE.Group();
-
-      // Corpo: sfera deformata (più larga in alto, con le fossette del picciolo e della base)
-      const g = new THREE.SphereGeometry(1, 72, 54);
-      const pos = g.attributes.position;
-      const colors = [];
-      const red = new THREE.Color(0xc8141c);
-      const lightRed = new THREE.Color(0xe2492f);
-      const gold = new THREE.Color(0xd9b03a);
-      const c = new THREE.Color();
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-        const r2 = x * x + z * z;
-        const phi = Math.atan2(z, x);
-        const rad = (1 + 0.12 * y) * (1 + 0.035 * Math.cos(5 * phi) * (1 - Math.abs(y)));
-        let ny = y * 0.88;
-        if (y > 0) ny -= 0.34 * Math.exp(-r2 / 0.1);   // fossetta in alto
-        else ny += 0.18 * Math.exp(-r2 / 0.08);        // fossetta in basso
-        pos.setXYZ(i, x * rad, ny, z * rad);
-
-        c.copy(red).lerp(lightRed, THREE.MathUtils.clamp(0.5 + 0.5 * Math.sin(phi * 3 + y * 2), 0, 1) * 0.5);
-        if (y > 0.75) c.lerp(gold, (y - 0.75) / 0.25 * 0.6);
-        colors.push(c.r, c.g, c.b);
-      }
-      g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      g.computeVertexNormals();
-      group.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.4, metalness: 0 })));
-
-      // Picciolo
-      const stem = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.035, 0.05, 0.6, 12),
-        new THREE.MeshStandardMaterial({ color: 0x4a3018, roughness: 0.8 })
-      );
-      stem.position.set(0.04, 0.82, 0);
-      stem.rotation.z = -0.18;
-      group.add(stem);
-
-      // Foglia
-      const leaf = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 24, 16),
-        new THREE.MeshStandardMaterial({ color: 0x3f8f2e, roughness: 0.6 })
-      );
-      leaf.scale.set(0.3, 0.03, 0.13);
-      leaf.position.set(0.28, 0.98, 0);
-      leaf.rotation.z = 0.35;
-      group.add(leaf);
-
-      group.scale.setScalar(1.45);
-      group.position.y = -0.1;
-      return group;
-    }
-
-    // dir: verso del trascinamento per modello (1 oppure -1: se un modello gira al contrario, cambia il suo segno)
-    const MODELS = {
-      banana: { build: buildBanana, dir: 1 },
-      apple:  { build: buildApple,  dir: -1 },
-    };
-
-    /* ================= Un viewer per ogni progetto ================= */
-    const TRACK_RADIUS = 0.85;      // dimensione della sfera virtuale rispetto al canvas
-    const RPM = 5;                  // giri al minuto della rotazione automatica
+    /* ================= Viewer 3D ================= */
+    const TRACK_RADIUS = 0.85;
+    const RPM = 5;
+    const CLICK = 1.25;                         // ogni click di +/- cambia la distanza della camera di questo fattore
     const VERTICAL_AXIS = new THREE.Vector3(0, 1, 0);
     const identity = new THREE.Quaternion();
     const clock = new THREE.Clock();
     const viewers = [];
+    const IS_MOBILE = window.matchMedia('(max-width: 600px)').matches;
+    const fadeEl = document.getElementById('fade');
+    let entering = false;
 
-    function createViewer(stage) {
+    /* Renderer a schermo intero usato solo durante la transizione */
+    let overlay = null;
+    function getOverlay() {
+      if (!overlay) {
+        const canvas = document.getElementById('enter-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        overlay = { canvas, renderer };
+      }
+      return overlay;
+    }
+
+    const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    function createViewer(stage, project) {
       const canvas = stage.querySelector('canvas');
       const resetBtn = stage.querySelector('.reset-btn');
       const hit = stage.querySelector('.hit');
@@ -417,25 +345,31 @@
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-      const IS_MOBILE = window.matchMedia('(max-width: 600px)').matches;
-      // Zoom di partenza, in "click" del bottone +: ogni click avvicina la camera dividendo la distanza per 1.25
-      const CLICK = 1.25;
-      const START_Z = IS_MOBILE ? 13 : 6.5 * CLICK;   // desktop: 1 click di - rispetto a prima; mobile: 2 click di - rispetto a prima
+      // Zoom di partenza: desktop 1 click di - rispetto a 6.5; mobile 2 click di - rispetto a prima (=13)
+      const START_Z = IS_MOBILE ? 13 : 6.5 * CLICK;
       camera.position.set(0, 0, START_Z);
       scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 1.1));
       const sun = new THREE.DirectionalLight(0xffffff, 1.6);
       sun.position.set(3, 4, 5);
       scene.add(sun);
 
-      const cfg = MODELS[stage.dataset.model];
-      const dragDir = cfg.dir;
-      const model = cfg.build();
+      const dragDir = project.dragDir != null ? project.dragDir : 1;
       const initialQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.25, -0.5, 0.15));
-      model.quaternion.copy(initialQuat);
-      scene.add(model);
+      let model = null;
 
-      // Zoom: avvicina/allontana la camera con un movimento morbido
-      const ZOOM_MIN = 3.5, ZOOM_MAX = 14, ZOOM_STEP = 1.25;
+      // Il modello (procedurale o .glb) si carica in modo asincrono; "Click for more" si applica a qualunque modello
+      loadModel(project.model).then((m) => {
+        model = m;
+        model.quaternion.copy(initialQuat);
+        try {
+          const res = addClickForMore(model);
+          console.info('[click-for-more]', project.id, res ? 'superficie coperta: ' + (res.coveredRatio * 100).toFixed(1) + '%' : 'non applicato');
+        } catch (err) { console.warn('Click for more non applicato:', err); }
+        scene.add(model);
+      }).catch((err) => console.error('Modello non caricato', project.id, err));
+
+      // Zoom morbido
+      const ZOOM_MIN = 3.5, ZOOM_MAX = 14, ZOOM_STEP = CLICK;
       let zoomTarget = camera.position.z;
       stage.querySelector('.zoom-in').addEventListener('click', () => {
         zoomTarget = THREE.MathUtils.clamp(zoomTarget / ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
@@ -444,15 +378,15 @@
         zoomTarget = THREE.MathUtils.clamp(zoomTarget * ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
       });
 
-      const state = { dragging: false, autoRotate: true, resetting: false, visible: true };
+      const state = { dragging: false, autoRotate: true, resetting: false, visible: true, frozen: false };
       const prev = new THREE.Vector3();
       const curr = new THREE.Vector3();
       const dq = new THREE.Quaternion();
-      const spin = new THREE.Quaternion();     // ultimo movimento, per l'inerzia
+      const spin = new THREE.Quaternion();
       const idleSpin = new THREE.Quaternion();
+      const raycaster = new THREE.Raycaster();
 
-      /* Arcball: il punto cliccato viene proiettato su una sfera virtuale; il modello ruota
-         senza limiti e la direzione dipende da dove clicchi. */
+      /* Arcball: rotazione senza limiti, la direzione dipende da dove clicchi */
       function sphereVector(clientX, clientY, out) {
         const rect = canvas.getBoundingClientRect();
         const half = Math.min(rect.width, rect.height) / 2;
@@ -463,21 +397,46 @@
         return out.set(x, y, z).normalize();
       }
 
+      /* Raggio dal puntatore verso il modello: restituisce il punto toccato sulla sua superficie (o null) */
+      function pick(clientX, clientY) {
+        if (!model) return null;
+        const rect = canvas.getBoundingClientRect();
+        const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+        camera.updateMatrixWorld();
+        raycaster.setFromCamera(ndc, camera);
+        const hits = raycaster.intersectObject(model, true);
+        return hits.length ? hits[0] : null;
+      }
+
+      const down = { x: 0, y: 0, t: 0, moved: false };
+
       hit.addEventListener('pointerdown', (e) => {
+        if (entering) return;
         state.dragging = true;
         state.resetting = false;
         hit.setPointerCapture(e.pointerId);
         hit.classList.add('dragging');
+        down.x = e.clientX; down.y = e.clientY; down.t = performance.now(); down.moved = false;
         sphereVector(e.clientX, e.clientY, prev);
         spin.copy(identity);
       });
 
       hit.addEventListener('pointermove', (e) => {
-        if (!state.dragging) return;
+        if (entering) return;
+        if (!state.dragging) {                       // il cursore diventa "mano" sopra il modello cliccabile
+          hit.classList.toggle('over-model', !!pick(e.clientX, e.clientY));
+          return;
+        }
+        if (!down.moved) {                           // piccola zona morta: un click non deve ruotare il modello
+          if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 5) return;
+          down.moved = true;
+          sphereVector(e.clientX, e.clientY, prev);
+          return;
+        }
         sphereVector(e.clientX, e.clientY, curr);
         if (dragDir > 0) dq.setFromUnitVectors(curr, prev);
         else dq.setFromUnitVectors(prev, curr);
-        model.quaternion.premultiply(dq).normalize();
+        if (model) model.quaternion.premultiply(dq).normalize();
         spin.copy(dq);
         prev.copy(curr);
         state.autoRotate = false;            // la rotazione automatica si ferma...
@@ -489,11 +448,16 @@
         state.dragging = false;
         hit.classList.remove('dragging');
         if (hit.hasPointerCapture(e.pointerId)) hit.releasePointerCapture(e.pointerId);
+        // click (senza trascinamento) sul modello -> si entra nel progetto
+        const isClick = !down.moved && performance.now() - down.t < 700;
+        if (isClick && e.type === 'pointerup') {
+          const h = pick(e.clientX, e.clientY);
+          if (h) enter(h);
+        }
       }
       hit.addEventListener('pointerup', endDrag);
       hit.addEventListener('pointercancel', endDrag);
 
-      // Reset: torna alla posizione iniziale e solo ora riparte la rotazione automatica
       resetBtn.addEventListener('click', () => {
         state.resetting = true;
         state.autoRotate = true;
@@ -503,7 +467,58 @@
 
       new IntersectionObserver(([entry]) => { state.visible = entry.isIntersecting; }).observe(stage);
 
+      /* ---------- Transizione: la camera entra nel modello, poi tutto diventa nero ---------- */
+      const tween = { active: false, t0: 0, dur: 1900, P0: null, P1: null, L0: null, L1: null, url: '' };
+
+      function enter(intersection) {
+        if (entering) return;
+        entering = true;
+        state.frozen = true; state.autoRotate = false; spin.copy(identity);
+        hit.classList.remove('over-model');
+
+        const rect = canvas.getBoundingClientRect();
+        const ov = getOverlay();
+        ov.renderer.setSize(window.innerWidth, window.innerHeight, false);
+        ov.canvas.style.display = 'block';
+        canvas.style.visibility = 'hidden';
+        // La stessa inquadratura del viewer, ma su tutto lo schermo: il modello non si sposta di un pixel
+        camera.aspect = rect.width / rect.height;
+        camera.setViewOffset(rect.width, rect.height, -rect.left, -rect.top, window.innerWidth, window.innerHeight);
+        document.documentElement.style.overflow = 'hidden';
+        // Una volta oltre la superficie si vede l'interno del modello (le facce posteriori diventano visibili)
+        model.traverse((o) => {
+          if (!o.isMesh) return;
+          (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { m.side = THREE.DoubleSide; m.needsUpdate = true; });
+        });
+
+        const point = intersection.point.clone();
+        const n = intersection.face.normal.clone().transformDirection(intersection.object.matrixWorld);
+        if (n.dot(point.clone().sub(camera.position)) > 0) n.negate();   // normale rivolta verso la camera
+        tween.P0 = camera.position.clone();
+        tween.L0 = new THREE.Vector3(0, 0, 0);
+        tween.P1 = point.clone().addScaledVector(n, -0.4);                // oltre la superficie, dentro il modello
+        tween.L1 = point.clone().addScaledVector(n, -3);
+        tween.t0 = performance.now();
+        tween.active = true;
+        tween.url = 'progetto.html?p=' + encodeURIComponent(project.id);
+      }
+
+      function stepTween(now) {
+        const t = Math.min(1, (now - tween.t0) / tween.dur);
+        const e = easeInOutCubic(t);
+        camera.position.lerpVectors(tween.P0, tween.P1, e);
+        const look = new THREE.Vector3().lerpVectors(tween.L0, tween.L1, e);
+        camera.lookAt(look);
+        // dopo essere passati attraverso la superficie, la pagina va a nero
+        fadeEl.style.opacity = String(THREE.MathUtils.clamp((t - 0.78) / 0.2, 0, 1));
+        if (t >= 1) {
+          tween.active = false;
+          window.location.href = tween.url;
+        }
+      }
+
       function resize() {
+        if (entering) return;
         const w = canvas.clientWidth, h = canvas.clientHeight;
         if (!w || !h) return;
         renderer.setSize(w, h, false);
@@ -511,23 +526,30 @@
         camera.updateProjectionMatrix();
       }
 
-      function update(dt) {
+      function update(dt, now) {
+        if (tween.active) {
+          stepTween(now);
+          getOverlay().renderer.render(scene, camera);
+          return;
+        }
+        if (state.frozen) return;
         camera.position.z += (zoomTarget - camera.position.z) * (1 - Math.pow(0.0005, dt));
-        if (state.resetting) {
-          model.quaternion.slerp(initialQuat, 1 - Math.pow(0.001, dt));
-          if (model.quaternion.angleTo(initialQuat) < 0.002) {
-            model.quaternion.copy(initialQuat);
-            state.resetting = false;
+        if (model) {
+          if (state.resetting) {
+            model.quaternion.slerp(initialQuat, 1 - Math.pow(0.001, dt));
+            if (model.quaternion.angleTo(initialQuat) < 0.002) {
+              model.quaternion.copy(initialQuat);
+              state.resetting = false;
+            }
+          } else if (!state.dragging) {
+            model.quaternion.premultiply(spin);
+            spin.slerp(identity, 0.04);
+            if (state.autoRotate) {
+              idleSpin.setFromAxisAngle(VERTICAL_AXIS, (RPM * 2 * Math.PI / 60) * dt);
+              model.quaternion.premultiply(idleSpin);
+            }
+            model.quaternion.normalize();
           }
-        } else if (!state.dragging) {
-          // inerzia dell'ultimo trascinamento, che si esaurisce piano piano
-          model.quaternion.premultiply(spin);
-          spin.slerp(identity, 0.04);
-          if (state.autoRotate) {
-            idleSpin.setFromAxisAngle(VERTICAL_AXIS, (RPM * 2 * Math.PI / 60) * dt);
-            model.quaternion.premultiply(idleSpin);
-          }
-          model.quaternion.normalize();
         }
         if (state.visible) renderer.render(scene, camera);
       }
@@ -536,15 +558,45 @@
       return { resize, update };
     }
 
-    document.querySelectorAll('.stage').forEach(stage => viewers.push(createViewer(stage)));
-    window.addEventListener('resize', () => viewers.forEach(v => v.resize()));
-
+    /* ================= Avvio ================= */
     function loop() {
       const dt = Math.min(clock.getDelta(), 0.1);
-      viewers.forEach(v => v.update(dt));
+      const now = performance.now();
+      viewers.forEach(v => v.update(dt, now));
       requestAnimationFrame(loop);
     }
-    loop();
+
+    async function start() {
+      let content;
+      try { content = await loadContent(); }
+      catch (err) {
+        const msg = el('div'); msg.id = 'load-error';
+        msg.textContent = 'Impossibile caricare content.json. Apri il sito da un server (GitHub Pages o python3 -m http.server).';
+        document.getElementById('main').appendChild(msg);
+        console.error(err);
+        return;
+      }
+      const siteTitle = (content.site && content.site.title) || 'Portfolio';
+      document.title = siteTitle;
+      document.getElementById('home-title').textContent = siteTitle;
+      document.getElementById('logo').textContent = siteTitle;
+
+      const main = document.getElementById('main');
+      const projects = content.projects || [];
+      projects.forEach((p, i) => main.appendChild(buildProjectSection(p, i)));
+      main.appendChild(buildContacts(content.contacts || {}));
+
+      main.querySelectorAll('.project').forEach((section, i) => {
+        viewers.push(createViewer(section.querySelector('.stage'), projects[i]));
+      });
+      window.addEventListener('resize', () => viewers.forEach(v => v.resize()));
+      if (location.hash) {                                  // ritorno dalla pagina progetto: posizionati sulla sezione
+        const t = document.getElementById(location.hash.slice(1));
+        if (t) t.scrollIntoView();
+      }
+      loop();
+    }
+    start();
   </script>
 </body>
 </html>

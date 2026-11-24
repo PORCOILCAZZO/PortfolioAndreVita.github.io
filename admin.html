@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Blueprint — Admin</title>
+  <style>
+    :root {
+      --blue: #0041BA; --w: #fff; --w2: rgba(255,255,255,.62); --w3: rgba(255,255,255,.18); --grid: rgba(255,255,255,.09);
+      --helv: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      background-color: var(--blue); color: var(--w); font-family: var(--helv); font-size: 14px; line-height: 1.4;
+      background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 24px 24px;
+      min-height: 100vh;
+    }
+    button, input, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+
+    /* ---------- barra ---------- */
+    .bar {
+      position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 12px 24px; background: var(--blue); border-bottom: 1.5px solid var(--w);
+    }
+    .bar h1 { margin: 0 auto 0 0; font-size: 15px; letter-spacing: .18em; text-transform: uppercase; font-weight: 700; }
+    .bar .status { color: var(--w2); font-size: 12px; max-width: 46ch; }
+    .bar .status.err { color: #fff; font-weight: 700; }
+    .btn {
+      background: transparent; border: 1.5px solid var(--w); border-radius: 0; padding: 8px 14px; cursor: pointer;
+      text-transform: uppercase; letter-spacing: .1em; font-size: 12px; font-weight: 700; text-decoration: none; display: inline-block; color: var(--w);
+    }
+    .btn:hover { background: var(--w); color: var(--blue); }
+    .btn:disabled { opacity: .35; cursor: default; pointer-events: none; }
+    .btn.solid { background: var(--w); color: var(--blue); }
+    .btn.solid:hover { background: transparent; color: var(--w); }
+
+    /* ---------- blueprint ---------- */
+    main { max-width: 1120px; margin: 0 auto; padding: 32px 24px 120px; }
+    .frame { position: relative; border: 1.5px solid var(--w); padding: 34px 24px 24px; margin-bottom: 44px; }
+    .tag {
+      position: absolute; top: -1px; left: -1px; background: var(--w); color: var(--blue);
+      padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+    }
+    .tools { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; }
+    .tools button { background: none; border: 1px solid var(--w); width: 26px; height: 26px; cursor: pointer; line-height: 1; font-weight: 700; }
+    .tools button:hover { background: var(--w); color: var(--blue); }
+
+    input.f, textarea.f {
+      width: 100%; background: transparent; border: 0; border-bottom: 1px dashed var(--w2); border-radius: 0; padding: 6px 2px; outline: 0; resize: vertical;
+    }
+    input.f::placeholder, textarea.f::placeholder { color: var(--w2); }
+    input.f:focus, textarea.f:focus { border-bottom: 1px solid var(--w); background: rgba(255,255,255,.07); }
+    .hint { color: var(--w2); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 4px; }
+
+    /* HOME */
+    .home-title { font-size: clamp(28px, 5vw, 56px); font-weight: 700; letter-spacing: -.02em; text-align: center; }
+    .home-arrow { display: block; margin: 18px auto 0; width: 22px; height: 22px; }
+
+    /* PROGETTO: replica schematica del riquadro 3D della landing */
+    .stage-bp { position: relative; height: 470px; border: 1px solid var(--w); }
+    .stage-bp .cap-top { position: absolute; top: 18px; left: 5%; width: min(46%, 440px); }
+    .stage-bp .cap-top .f.t { font-size: 30px; font-weight: 700; text-transform: uppercase; letter-spacing: -.01em; }
+    .stage-bp .cap-bottom { position: absolute; bottom: 18px; left: 5%; width: min(46%, 440px); }
+    .stage-bp .cap-bottom textarea { min-height: 84px; }
+    .slot {
+      border: 1.5px dashed var(--w); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+      cursor: pointer; transition: background .15s ease; padding: 10px; gap: 6px;
+    }
+    .slot:hover, .slot.over { background: rgba(255,255,255,.14); border-style: solid; }
+    .slot.model { position: absolute; top: 110px; bottom: 110px; right: 6%; width: min(46%, 420px); }
+    .slot .big { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; }
+    .slot .small { font-size: 11px; color: var(--w2); word-break: break-all; }
+    .slot svg { width: 64px; height: 64px; stroke: var(--w); fill: none; stroke-width: 1.4; }
+
+    .images { margin-top: 18px; }
+    .tiles { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+    .tile { position: relative; width: 96px; aspect-ratio: 3 / 4; border: 1.5px solid var(--w); background: var(--blue); overflow: hidden; cursor: grab; }
+    .tile img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1) contrast(1.15); mix-blend-mode: screen; }
+    .tile .x {
+      position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; line-height: 1; padding: 0; cursor: pointer;
+      background: var(--blue); border: 1px solid var(--w); font-weight: 700; font-size: 12px; display: none;
+    }
+    .tile:hover .x { display: block; }
+    .tile .n { position: absolute; left: 4px; bottom: 3px; font-size: 10px; font-weight: 700; background: var(--blue); padding: 0 3px; }
+    .tile.dragover { outline: 2px solid var(--w); outline-offset: 2px; }
+    .tile.add { border-style: dashed; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; width: 96px; }
+    .tile.add:hover, .tile.add.over { background: rgba(255,255,255,.14); border-style: solid; }
+
+    /* CONTATTI */
+    .block { border: 1px solid var(--w); padding: 12px 14px 10px; margin-top: 14px; position: relative; }
+    .block .rm { position: absolute; top: 4px; right: 6px; background: none; border: 1px solid var(--w); width: 22px; height: 22px; cursor: pointer; font-weight: 700; line-height: 1; padding: 0; }
+    .block .rm:hover { background: var(--w); color: var(--blue); }
+    .contacts-title { font-size: 28px; font-weight: 700; }
+
+    /* ---------- blocco accesso ---------- */
+    #lock { position: fixed; inset: 0; z-index: 100; background-color: var(--blue); display: flex; align-items: center; justify-content: center; padding: 24px;
+      background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 24px 24px; }
+    #lock.hidden { display: none; }
+    .lockbox { width: min(460px, 100%); border: 1.5px solid var(--w); padding: 34px 26px 26px; position: relative; background: var(--blue); }
+    .lockbox label { display: block; margin: 14px 0 2px; }
+    .lockbox .row { display: flex; gap: 12px; }
+    .lockbox .row > div { flex: 1; }
+    .lockbox p { margin: 10px 0 0; color: var(--w2); font-size: 12px; }
+    .lockbox .actions { margin-top: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .lockbox a.link { color: var(--w2); font-size: 12px; cursor: pointer; text-decoration: underline; margin-left: auto; }
+    .error { color: #fff; font-weight: 700; margin-top: 12px; min-height: 1.2em; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Accesso: la scrittura sul repository richiede il token GitHub, cifrato qui con la tua password ===== -->
+  <div id="lock">
+    <div class="lockbox">
+      <span class="tag">Accesso riservato</span>
+
+      <form id="form-setup" class="hidden" autocomplete="off">
+        <p class="hint" style="margin-top:0">Prima configurazione</p>
+        <div class="row">
+          <div><label class="hint" for="s-owner">Utente / organizzazione GitHub</label><input class="f" id="s-owner" required placeholder="tuo-utente-github"></div>
+          <div><label class="hint" for="s-repo">Repository</label><input class="f" id="s-repo" required placeholder="nome-del-repository"></div>
+        </div>
+        <label class="hint" for="s-branch">Branch</label><input class="f" id="s-branch" value="main" required>
+        <label class="hint" for="s-token">Token personale GitHub (fine-grained, solo questo repo, permesso Contents: Read and write)</label>
+        <input class="f" id="s-token" type="password" required placeholder="github_pat_…">
+        <label class="hint" for="s-pass">Scegli una password (cifra il token in questo browser)</label>
+        <input class="f" id="s-pass" type="password" required minlength="6">
+        <div class="actions"><button class="btn solid" type="submit">Salva e apri</button></div>
+        <p>Il token non lascia mai il tuo browser se non per parlare con api.github.com, ed è salvato solo cifrato.</p>
+        <div class="error" id="e-setup"></div>
+      </form>
+
+      <form id="form-unlock" class="hidden" autocomplete="off">
+        <p class="hint" style="margin-top:0" id="unlock-repo"></p>
+        <label class="hint" for="u-pass">Password</label>
+        <input class="f" id="u-pass" type="password" required autofocus>
+        <div class="actions">
+          <button class="btn solid" type="submit">Entra</button>
+          <a class="link" id="forget">Dimentica la configurazione</a>
+        </div>
+        <div class="error" id="e-unlock"></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="bar">
+    <h1>Blueprint &mdash; <span id="repo-label">backend</span></h1>
+    <span class="status" id="status">Non connesso</span>
+    <a class="btn" href="index.html" target="_blank" rel="noopener">Vedi il sito</a>
+    <button class="btn" id="add-project" type="button">+ Progetto</button>
+    <button class="btn solid" id="publish" type="button" disabled>Pubblica</button>
+    <button class="btn" id="lock-btn" type="button">Blocca</button>
+  </div>
+
+  <main id="bp"></main>
+  <input type="file" id="picker" class="hidden">
+
+  <script>
+  /* =====================================================================
+     Backend "blueprint": modifica content.json + immagini + modelli .glb
+     e pubblica tutto in UN SOLO commit sul repository GitHub.
+     ===================================================================== */
+  const $ = (s, r = document) => r.querySelector(s);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const API = 'https://api.github.com';
+  const CFG_KEY = 'bp-config-v1';
+
+  let cfg = null;            // { owner, repo, branch }
+  let token = null;          // solo in memoria
+  let content = null;        // il content.json in modifica
+  let loadedRefs = new Set();// asset referenziati nella versione pubblicata
+  const pending = new Map(); // path -> Blob da caricare
+  const previews = new Map();// path -> objectURL per le anteprime
+  let dirty = false;
+
+  /* ---------------- cifratura del token (WebCrypto) ---------------- */
+  const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function deriveKey(pass, salt) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  async function encryptToken(pass, tok) {
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(pass, salt);
+    const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(tok));
+    return { salt: b64(salt), iv: b64(iv), data: b64(data) };
+  }
+  async function decryptToken(pass, c) {
+    const key = await deriveKey(pass, unb64(c.salt));
+    const buf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(c.iv) }, key, unb64(c.data));
+    return new TextDecoder().decode(buf);
+  }
+
+  /* ---------------- stato / messaggi ---------------- */
+  function status(msg, err) { const s = $('#status'); s.textContent = msg; s.classList.toggle('err', !!err); }
+  function setDirty(v) { dirty = v; $('#publish').disabled = !v || !token; }
+  window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  /* ---------------- GitHub ---------------- */
+  async function gh(method, path, body) {
+    const res = await fetch(API + path, {
+      method,
+      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      let detail = ''; try { detail = (await res.json()).message || ''; } catch (_) {}
+      const hint = res.status === 401 ? ' (token non valido o scaduto)' : res.status === 403 ? ' (permessi insufficienti: serve Contents: Read and write)' : res.status === 404 ? ' (repository, branch o file non trovato / token senza accesso)' : '';
+      throw new Error('GitHub ' + res.status + hint + (detail ? ': ' + detail : ''));
+    }
+    return res.status === 204 ? null : res.json();
+  }
+  const repoPath = () => `/repos/${cfg.owner}/${cfg.repo}`;
+
+  async function loadContent() {
+    status('Carico content.json dal repository…');
+    let text;
+    try {
+      const f = await gh('GET', `${repoPath()}/contents/content.json?ref=${encodeURIComponent(cfg.branch)}`);
+      text = new TextDecoder().decode(unb64(f.content.replace(/\n/g, '')));
+    } catch (e) {
+      status('Non riesco a leggere dal repository (' + e.message + '). Uso la copia pubblicata.', true);
+      const r = await fetch('content.json?v=' + Date.now(), { cache: 'no-store' });
+      text = await r.text();
+    }
+    content = JSON.parse(text);
+    content.projects = content.projects || [];
+    content.contacts = content.contacts || { title: 'Contatti', note: '', blocks: [] };
+    content.site = content.site || { title: 'Portfolio' };
+    loadedRefs = referencedAssets();
+    render();
+    if (!$('#status').classList.contains('err')) status('Connesso a ' + cfg.owner + '/' + cfg.repo + ' (' + cfg.branch + ')');
+  }
+
+  function referencedAssets() {
+    const set = new Set();
+    (content.projects || []).forEach((p) => {
+      (p.images || []).forEach((i) => { if (i.startsWith('assets/')) set.add(i); });
+      if (p.model && p.model.kind === 'glb' && p.model.src) set.add(p.model.src);
+    });
+    return set;
+  }
+
+  const blobToB64 = (blob) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result).split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+
+  async function publish() {
+    const btn = $('#publish');
+    btn.disabled = true;
+    try {
+      const refs = referencedAssets();
+      const uploads = [...pending.entries()].filter(([p]) => refs.has(p));
+      const removed = [...loadedRefs].filter((p) => !refs.has(p));
+
+      status('Leggo lo stato del repository…');
+      const ref = await gh('GET', `${repoPath()}/git/ref/heads/${encodeURIComponent(cfg.branch)}`);
+      const headSha = ref.object.sha;
+      const head = await gh('GET', `${repoPath()}/git/commits/${headSha}`);
+      const tree = [];
+
+      let n = 0;
+      for (const [path, blob] of uploads) {
+        status(`Carico file ${++n}/${uploads.length + 1}: ${path}`);
+        const b = await gh('POST', `${repoPath()}/git/blobs`, { content: await blobToB64(blob), encoding: 'base64' });
+        tree.push({ path, mode: '100644', type: 'blob', sha: b.sha });
+      }
+      status(`Carico file ${uploads.length + 1}/${uploads.length + 1}: content.json`);
+      const cj = await gh('POST', `${repoPath()}/git/blobs`, { content: JSON.stringify(content, null, 2) + '\n', encoding: 'utf-8' });
+      tree.push({ path: 'content.json', mode: '100644', type: 'blob', sha: cj.sha });
+
+      if (removed.length) {                       // cancella solo ciò che esiste davvero nel repository
+        const existing = await gh('GET', `${repoPath()}/git/trees/${head.tree.sha}?recursive=1`);
+        const there = new Set((existing.tree || []).map((t) => t.path));
+        removed.filter((p) => there.has(p)).forEach((path) => tree.push({ path, mode: '100644', type: 'blob', sha: null }));
+      }
+
+      status('Creo il commit…');
+      const newTree = await gh('POST', `${repoPath()}/git/trees`, { base_tree: head.tree.sha, tree });
+      const commit = await gh('POST', `${repoPath()}/git/commits`, { message: 'Aggiornamento da blueprint admin', tree: newTree.sha, parents: [headSha] });
+      await gh('PATCH', `${repoPath()}/git/refs/heads/${encodeURIComponent(cfg.branch)}`, { sha: commit.sha });
+
+      uploads.forEach(([p]) => pending.delete(p));
+      loadedRefs = refs;
+      setDirty(false);
+      status('Pubblicato. Il sito si aggiorna in circa 1–2 minuti.');
+    } catch (e) {
+      console.error(e);
+      status('Errore: ' + e.message, true);
+      btn.disabled = false;
+    }
+  }
+
+  /* ---------------- immagini / modelli ---------------- */
+  async function resizeImage(file, max = 1600) {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    return new Promise((res) => c.toBlob(res, 'image/jpeg', 0.88));
+  }
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  async function addImages(project, files) {
+    const imgs = [...files].filter((f) => f.type.startsWith('image/'));
+    if (!imgs.length) { status('Trascina file immagine (jpg, png, webp…)', true); return; }
+    for (const f of imgs) {
+      const blob = await resizeImage(f);
+      const path = `assets/images/${project.id}-${uid()}.jpg`;
+      pending.set(path, blob);
+      previews.set(path, URL.createObjectURL(blob));
+      project.images = project.images || [];
+      project.images.push(path);
+    }
+    setDirty(true); render(); status(imgs.length + ' immagine/i aggiunta/e (da pubblicare)');
+  }
+
+  function setModel(project, file) {
+    if (!/\.glb$/i.test(file.name)) { status('Per ora sono supportati i modelli .glb (un solo file).', true); return; }
+    const path = `assets/models/${project.id}-${uid()}.glb`;
+    pending.set(path, file);
+    project.model = { kind: 'glb', src: path, name: file.name };
+    setDirty(true); render(); status('Modello "' + file.name + '" caricato (da pubblicare)');
+  }
+
+  /* ---------------- rendering del blueprint ---------------- */
+  const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'progetto';
+  function bind(input, obj, key) { input.value = obj[key] || ''; input.addEventListener('input', () => { obj[key] = input.value; setDirty(true); }); return input; }
+
+  function dropzone(node, onFiles, multiple) {
+    node.addEventListener('dragover', (e) => { if ([...e.dataTransfer.types].includes('Files')) { e.preventDefault(); node.classList.add('over'); } });
+    node.addEventListener('dragleave', () => node.classList.remove('over'));
+    node.addEventListener('drop', (e) => { node.classList.remove('over'); if (e.dataTransfer.files.length) { e.preventDefault(); e.stopPropagation(); onFiles(e.dataTransfer.files); } });
+    node.addEventListener('click', () => {
+      const p = $('#picker'); p.value = ''; p.multiple = !!multiple;
+      p.onchange = () => { if (p.files.length) onFiles(p.files); };
+      p.click();
+    });
+  }
+
+  function render() {
+    const bp = $('#bp'); bp.innerHTML = '';
+
+    /* HOME */
+    const home = el('section', 'frame'); home.append(el('span', 'tag', 'Home'));
+    const ht = el('input', 'f home-title'); ht.style.textAlign = 'center'; ht.placeholder = 'Titolo del sito';
+    bind(ht, content.site, 'title');
+    home.append(ht);
+    home.insertAdjacentHTML('beforeend', '<svg class="home-arrow" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M5 12l7 7 7-7"/></svg>');
+    bp.append(home);
+
+    /* PROGETTI */
+    content.projects.forEach((p, i) => {
+      const fr = el('section', 'frame'); fr.append(el('span', 'tag', `Progetto ${String(i + 1).padStart(2, '0')} · ${p.id}`));
+      const tools = el('div', 'tools');
+      const up = el('button', null, '↑'), down = el('button', null, '↓'), del = el('button', null, '✕');
+      up.title = 'Sposta su'; down.title = 'Sposta giù'; del.title = 'Elimina progetto';
+      up.onclick = () => { if (i > 0) { [content.projects[i - 1], content.projects[i]] = [content.projects[i], content.projects[i - 1]]; setDirty(true); render(); } };
+      down.onclick = () => { if (i < content.projects.length - 1) { [content.projects[i + 1], content.projects[i]] = [content.projects[i], content.projects[i + 1]]; setDirty(true); render(); } };
+      del.onclick = () => { if (confirm('Eliminare il progetto "' + (p.title || p.id) + '" e i suoi file?')) { content.projects.splice(i, 1); setDirty(true); render(); } };
+      tools.append(up, down, del); fr.append(tools);
+
+      const stage = el('div', 'stage-bp');
+      const top = el('div', 'cap-top');
+      top.append(bind(Object.assign(el('input', 'f t'), { placeholder: 'TITOLO' }), p, 'title'));
+      top.append(bind(Object.assign(el('input', 'f'), { placeholder: 'Sottotitolo' }), p, 'subtitle'));
+      const bottom = el('div', 'cap-bottom');
+      bottom.append(bind(Object.assign(el('textarea', 'f'), { placeholder: 'Descrizione rapida del progetto' }), p, 'description'));
+
+      const slot = el('div', 'slot model');
+      slot.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 64 64"><path d="M32 6 56 19v26L32 58 8 45V19z"/><path d="M8 19l24 13 24-13M32 32v26"/></svg>');
+      slot.append(el('div', 'big', 'Modello 3D'));
+      const isGlb = p.model && p.model.kind === 'glb';
+      slot.append(el('div', 'small', isGlb ? (p.model.name || p.model.src.split('/').pop()) : 'modello di esempio: ' + ((p.model && p.model.name) || 'banana')));
+      slot.append(el('div', 'small', 'trascina qui un file .glb'));
+      dropzone(slot, (files) => setModel(p, files[0]), false);
+      stage.append(top, bottom, slot);
+      fr.append(stage);
+
+      const imgs = el('div', 'images');
+      imgs.append(el('p', 'hint', `Sfera di immagini · ${(p.images || []).length} immagini · formato 3:4 (trascinale per riordinarle)`));
+      const tiles = el('div', 'tiles');
+      (p.images || []).forEach((src, k) => {
+        const t = el('div', 'tile'); t.draggable = true;
+        const im = document.createElement('img'); im.src = previews.get(src) || src; im.alt = ''; im.draggable = false;
+        const x = el('button', 'x', '✕'); x.title = 'Rimuovi';
+        x.onclick = (e) => { e.stopPropagation(); p.images.splice(k, 1); setDirty(true); render(); };
+        t.append(im, x, el('span', 'n', String(k + 1)));
+        t.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/x-bp-img', JSON.stringify({ pid: p.id, k })); e.dataTransfer.effectAllowed = 'move'; });
+        t.addEventListener('dragover', (e) => { if ([...e.dataTransfer.types].includes('text/x-bp-img')) { e.preventDefault(); t.classList.add('dragover'); } });
+        t.addEventListener('dragleave', () => t.classList.remove('dragover'));
+        t.addEventListener('drop', (e) => {
+          t.classList.remove('dragover');
+          const raw = e.dataTransfer.getData('text/x-bp-img'); if (!raw) return;
+          e.preventDefault(); e.stopPropagation();
+          const d = JSON.parse(raw); if (d.pid !== p.id || d.k === k) return;
+          const [m] = p.images.splice(d.k, 1); p.images.splice(k, 0, m); setDirty(true); render();
+        });
+        tiles.append(t);
+      });
+      const add = el('div', 'tile add', '+'); add.title = 'Trascina qui le immagini (o clicca)';
+      dropzone(add, (files) => addImages(p, files), true);
+      tiles.append(add); imgs.append(tiles); fr.append(imgs);
+      bp.append(fr);
+    });
+
+    /* CONTATTI */
+    const c = content.contacts;
+    const cf = el('section', 'frame'); cf.append(el('span', 'tag', 'Contatti'));
+    cf.append(bind(Object.assign(el('input', 'f contacts-title'), { placeholder: 'Titolo' }), c, 'title'));
+    cf.append(bind(Object.assign(el('input', 'f'), { placeholder: 'Nota (opzionale)' }), c, 'note'));
+    (c.blocks = c.blocks || []).forEach((b, i) => {
+      const blk = el('div', 'block');
+      const rm = el('button', 'rm', '✕'); rm.title = 'Rimuovi blocco'; rm.onclick = () => { c.blocks.splice(i, 1); setDirty(true); render(); };
+      blk.append(rm);
+      blk.append(bind(Object.assign(el('input', 'f'), { placeholder: 'Etichetta (es. Email)' }), b, 'label'));
+      const ta = Object.assign(el('textarea', 'f'), { placeholder: 'Una riga per voce (email e telefoni diventano link)', rows: 3 });
+      ta.value = (b.lines || []).join('\n');
+      ta.addEventListener('input', () => { b.lines = ta.value.split('\n').map((s) => s.trim()).filter(Boolean); setDirty(true); });
+      blk.append(ta); cf.append(blk);
+    });
+    const addB = el('button', 'btn', '+ Blocco'); addB.style.marginTop = '16px';
+    addB.onclick = () => { c.blocks.push({ label: '', lines: [] }); setDirty(true); render(); };
+    cf.append(addB);
+    bp.append(cf);
+  }
+
+  /* non far aprire i file trascinati fuori dagli spazi giusti */
+  ['dragover', 'drop'].forEach((ev) => window.addEventListener(ev, (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); }));
+
+  $('#add-project').onclick = () => {
+    const base = 'progetto'; let id = base, n = 1;
+    while (content.projects.some((p) => p.id === id)) id = base + '-' + (++n);
+    content.projects.push({ id, title: 'Nuovo progetto', subtitle: 'Sottotitolo', description: 'Descrizione del progetto.', model: { kind: 'builtin', name: 'banana' }, dragDir: 1, images: [] });
+    setDirty(true); render();
+    window.scrollTo({ top: document.body.scrollHeight - 900, behavior: 'smooth' });
+  };
+  $('#publish').onclick = publish;
+  $('#lock-btn').onclick = () => { if (!dirty || confirm('Ci sono modifiche non pubblicate. Bloccare comunque?')) { dirty = false; location.reload(); } };
+
+  /* ---------------- accesso ---------------- */
+  function showLock(which) {
+    $('#lock').classList.remove('hidden');
+    $('#form-setup').classList.toggle('hidden', which !== 'setup');
+    $('#form-unlock').classList.toggle('hidden', which !== 'unlock');
+  }
+  async function enter() {
+    $('#lock').classList.add('hidden');
+    $('#repo-label').textContent = cfg.owner + '/' + cfg.repo;
+    try { await loadContent(); } catch (e) { status('Errore: ' + e.message, true); }
+  }
+  $('#form-setup').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const o = $('#s-owner').value.trim(), r = $('#s-repo').value.trim(), b = $('#s-branch').value.trim() || 'main', t = $('#s-token').value.trim();
+      const enc = await encryptToken($('#s-pass').value, t);
+      localStorage.setItem(CFG_KEY, JSON.stringify({ owner: o, repo: r, branch: b, enc }));
+      cfg = { owner: o, repo: r, branch: b }; token = t;
+      await enter();
+    } catch (err) { $('#e-setup').textContent = 'Errore: ' + err.message; }
+  });
+  $('#form-unlock').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const saved = JSON.parse(localStorage.getItem(CFG_KEY));
+    try {
+      token = await decryptToken($('#u-pass').value, saved.enc);
+      cfg = { owner: saved.owner, repo: saved.repo, branch: saved.branch };
+      await enter();
+    } catch (err) { $('#e-unlock').textContent = 'Password errata.'; }
+  });
+  $('#forget').onclick = () => { if (confirm('Cancellare token e configurazione salvati in questo browser?')) { localStorage.removeItem(CFG_KEY); location.reload(); } };
+
+  (function init() {
+    let saved = null; try { saved = JSON.parse(localStorage.getItem(CFG_KEY)); } catch (_) {}
+    if (saved && saved.enc) { $('#unlock-repo').textContent = saved.owner + '/' + saved.repo + ' · ' + saved.branch; showLock('unlock'); $('#u-pass').focus(); }
+    else showLock('setup');
+  })();
+  </script>
+</body>
+</html>
