@@ -423,7 +423,7 @@
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
       const IS_MOBILE = window.matchMedia('(max-width: 600px)').matches;
-      const START_Z = IS_MOBILE ? 13 : 6.5;   // su mobile il modello parte più piccolo (camera a distanza doppia)
+      const START_Z = IS_MOBILE ? 13 / (1.25 * 1.25) : 6.5;   // su mobile: distanza doppia, poi 2 click di + (ogni click = distanza / 1.25)
       camera.position.set(0, 0, START_Z);
       scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 1.1));
       const sun = new THREE.DirectionalLight(0xffffff, 1.6);
