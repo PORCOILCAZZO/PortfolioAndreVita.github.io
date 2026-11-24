@@ -1,30 +1,26 @@
 {
   "site": {
-    "title": "Portfolio Andrea Vitali"
+    "title": "Portfolio AndreVita"
   },
   "projects": [
     {
       "id": "banana",
-      "title": "circonvalley",
-      "subtitle": "Cycling Community",
-      "description": "The biggest cycling community in Milano, founded by me and friends and managed by me and friends",
-      "model": {
-        "kind": "glb",
-        "src": "assets/models/banana-mwuwv7a9dby1.glb",
-        "name": "model.glb"
-      },
+      "title": "Banana",
+      "subtitle": "Modello 3D interattivo",
+      "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
+      "model": { "kind": "builtin", "name": "banana" },
       "dragDir": 1,
       "images": [
-        "assets/images/banana-mwuwwtzs02u8.jpg",
-        "assets/images/banana-mwuwx9fp6giz.jpg",
-        "assets/images/banana-mwuwxfxst5b4.jpg",
-        "assets/images/banana-mwuwxnf1e9bl.jpg",
-        "assets/images/banana-mwux0qczeo5j.jpg",
-        "assets/images/banana-mwux0t7713oa.jpg",
-        "assets/images/banana-mwux0w5j95dq.jpg",
-        "assets/images/banana-mwux13l2zpr2.jpg",
-        "assets/images/banana-mwux1aphf5k5.jpg",
-        "assets/images/banana-mwux1fdjz6p0.jpg"
+        "assets/images/placeholder-01.jpg",
+        "assets/images/placeholder-02.jpg",
+        "assets/images/placeholder-03.jpg",
+        "assets/images/placeholder-04.jpg",
+        "assets/images/placeholder-05.jpg",
+        "assets/images/placeholder-06.jpg",
+        "assets/images/placeholder-07.jpg",
+        "assets/images/placeholder-08.jpg",
+        "assets/images/placeholder-09.jpg",
+        "assets/images/placeholder-10.jpg"
       ]
     },
     {
@@ -32,10 +28,7 @@
       "title": "Mela",
       "subtitle": "Modello 3D interattivo",
       "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
-      "model": {
-        "kind": "builtin",
-        "name": "apple"
-      },
+      "model": { "kind": "builtin", "name": "apple" },
       "dragDir": -1,
       "images": [
         "assets/images/placeholder-06.jpg",
@@ -55,33 +48,10 @@
     "title": "Contatti",
     "note": "(Dati placeholder: da sostituire con i tuoi.)",
     "blocks": [
-      {
-        "label": "Indirizzo",
-        "lines": [
-          "Sua Santità il Papa",
-          "Palazzo Apostolico",
-          "00120 Città del Vaticano"
-        ]
-      },
-      {
-        "label": "Sala Stampa della Santa Sede",
-        "lines": [
-          "Via della Conciliazione 54",
-          "00120 Città del Vaticano"
-        ]
-      },
-      {
-        "label": "Email",
-        "lines": [
-          "vaticanmedia@spc.va"
-        ]
-      },
-      {
-        "label": "Telefono",
-        "lines": [
-          "+39 06 698 921"
-        ]
-      }
+      { "label": "Indirizzo", "lines": ["Sua Santità il Papa", "Palazzo Apostolico", "00120 Città del Vaticano"] },
+      { "label": "Sala Stampa della Santa Sede", "lines": ["Via della Conciliazione 54", "00120 Città del Vaticano"] },
+      { "label": "Email", "lines": ["vaticanmedia@spc.va"] },
+      { "label": "Telefono", "lines": ["+39 06 698 921"] }
     ]
   }
 }

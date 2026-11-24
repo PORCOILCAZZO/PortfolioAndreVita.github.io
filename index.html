@@ -157,7 +157,7 @@
     #contatti a { color: var(--fg); }
 
     /* ---------- Transizione "dentro il modello" ---------- */
-    #enter-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 900; display: none; pointer-events: none; }
+    #enter-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 900; display: none; pointer-events: none; }
     #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 1000; }
     #load-error { padding: 120px 24px; font-family: var(--helv); }
   </style>
@@ -202,9 +202,29 @@
   </script>
 
   <script type="module">
-    import * as THREE from 'three';
-    import { loadModel } from './js/models.js';
-    import { addClickForMore } from './js/decal.js';
+    /* Se qualcosa non si carica (file mancanti, aperto con doppio clic, rete...) lo diciamo a schermo invece di restare muti */
+    function showProblem(lines) {
+      const box = document.createElement('div');
+      box.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:2000;background:#000;color:#fff;padding:16px 18px;font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif;border-radius:4px;max-width:720px;margin:0 auto;';
+      box.innerHTML = '<b>Il sito non riesce a caricarsi.</b><br>' + lines.map((l) => '&bull; ' + l).join('<br>');
+      document.body.appendChild(box);
+    }
+    if (location.protocol === 'file:') {
+      showProblem(['Hai aperto il file con doppio clic: i moduli JavaScript non funzionano da file locale.',
+                   'Apri il sito da GitHub Pages oppure avvia <code>python3 -m http.server 8000</code> nella cartella e vai su http://localhost:8000']);
+    }
+    let THREE, loadModel, makeEnvironment, addClickForMore;
+    try {
+      THREE = await import('three');
+      ({ loadModel, makeEnvironment } = await import('./js/models.js'));
+      ({ addClickForMore } = await import('./js/decal.js'));
+    } catch (err) {
+      console.error(err);
+      showProblem(['Non riesco a caricare i file del sito: ' + (err && err.message ? err.message : err),
+                   'Controlla che nel repository ci sia la cartella <code>js/</code> con <code>models.js</code> e <code>decal.js</code> accanto a <code>index.html</code>.',
+                   'Controlla anche la connessione (la libreria 3D arriva da cdn.jsdelivr.net).']);
+      throw err;
+    }
 
     /* ================= Contenuti (da content.json, modificabile dalla pagina admin) ================= */
     async function loadContent() {
@@ -318,7 +338,6 @@
       return overlay;
     }
 
-    const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
     function createViewer(stage, project) {
       const canvas = stage.querySelector('canvas');
@@ -353,7 +372,8 @@
       sun.position.set(3, 4, 5);
       scene.add(sun);
 
-      const dragDir = project.dragDir != null ? project.dragDir : 1;
+      const isGlb = !!(project.model && project.model.kind === 'glb');
+      const dragDir = isGlb ? 1 : (project.dragDir != null ? project.dragDir : 1);   // i modelli caricati si muovono come la banana
       const initialQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.25, -0.5, 0.15));
       let model = null;
 
@@ -361,6 +381,7 @@
       loadModel(project.model).then((m) => {
         model = m;
         model.quaternion.copy(initialQuat);
+        if (isGlb) { try { scene.environment = makeEnvironment(renderer); } catch (e) { console.warn('ambiente non creato', e); } }
         try {
           const res = addClickForMore(model);
           console.info('[click-for-more]', project.id, res ? 'superficie coperta: ' + (res.coveredRatio * 100).toFixed(1) + '%' : 'non applicato');
@@ -467,8 +488,15 @@
 
       new IntersectionObserver(([entry]) => { state.visible = entry.isIntersecting; }).observe(stage);
 
-      /* ---------- Transizione: la camera entra nel modello, poi tutto diventa nero ---------- */
-      const tween = { active: false, t0: 0, dur: 1900, P0: null, P1: null, L0: null, L1: null, url: '' };
+      /* ---------- Transizione: zoom dentro il modello, subito a nero ----------
+         La camera non cambia orientamento e il modello non si muove: si avvicina lungo il raggio che passa
+         per il punto cliccato (come uno zoom su quel punto). Il nero parte appena dopo il click e
+         copre tutto PRIMA che la camera arrivi alla superficie. */
+      const tween = { active: false, t0: 0, dur: 950, P0: null, P1: null, url: '' };
+      const easeIn = (t) => Math.pow(t, 1.5);          // ease-in leggero
+
+      const blockKeys = new Set([' ', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
+      const stopScroll = (e) => { if (e.type !== 'keydown' || blockKeys.has(e.key)) e.preventDefault(); };
 
       function enter(intersection) {
         if (entering) return;
@@ -476,41 +504,34 @@
         state.frozen = true; state.autoRotate = false; spin.copy(identity);
         hit.classList.remove('over-model');
 
+        // blocco lo scroll SENZA toccare il layout (niente scomparsa della scrollbar = niente salti)
+        ['wheel', 'touchmove', 'keydown'].forEach((ev) => window.addEventListener(ev, stopScroll, { passive: false }));
+
         const rect = canvas.getBoundingClientRect();
         const ov = getOverlay();
-        ov.renderer.setSize(window.innerWidth, window.innerHeight, false);
         ov.canvas.style.display = 'block';
+        const W = ov.canvas.clientWidth, H = ov.canvas.clientHeight;
+        ov.renderer.setSize(W, H, false);
         canvas.style.visibility = 'hidden';
-        // La stessa inquadratura del viewer, ma su tutto lo schermo: il modello non si sposta di un pixel
+        // Stessa inquadratura del viewer ma su tutto lo schermo: il modello resta esattamente dov'è
         camera.aspect = rect.width / rect.height;
-        camera.setViewOffset(rect.width, rect.height, -rect.left, -rect.top, window.innerWidth, window.innerHeight);
-        document.documentElement.style.overflow = 'hidden';
-        // Una volta oltre la superficie si vede l'interno del modello (le facce posteriori diventano visibili)
-        model.traverse((o) => {
-          if (!o.isMesh) return;
-          (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { m.side = THREE.DoubleSide; m.needsUpdate = true; });
-        });
+        camera.setViewOffset(rect.width, rect.height, -rect.left, -rect.top, W, H);
 
         const point = intersection.point.clone();
-        const n = intersection.face.normal.clone().transformDirection(intersection.object.matrixWorld);
-        if (n.dot(point.clone().sub(camera.position)) > 0) n.negate();   // normale rivolta verso la camera
         tween.P0 = camera.position.clone();
-        tween.L0 = new THREE.Vector3(0, 0, 0);
-        tween.P1 = point.clone().addScaledVector(n, -0.4);                // oltre la superficie, dentro il modello
-        tween.L1 = point.clone().addScaledVector(n, -3);
+        const dir = point.clone().sub(tween.P0).normalize();
+        tween.P1 = point.clone().addScaledVector(dir, 0.5);   // appena oltre la superficie
         tween.t0 = performance.now();
         tween.active = true;
         tween.url = 'progetto.html?p=' + encodeURIComponent(project.id);
+        update(0, tween.t0);                                   // primo fotogramma subito, senza attese
       }
 
       function stepTween(now) {
         const t = Math.min(1, (now - tween.t0) / tween.dur);
-        const e = easeInOutCubic(t);
-        camera.position.lerpVectors(tween.P0, tween.P1, e);
-        const look = new THREE.Vector3().lerpVectors(tween.L0, tween.L1, e);
-        camera.lookAt(look);
-        // dopo essere passati attraverso la superficie, la pagina va a nero
-        fadeEl.style.opacity = String(THREE.MathUtils.clamp((t - 0.78) / 0.2, 0, 1));
+        camera.position.lerpVectors(tween.P0, tween.P1, easeIn(t));
+        camera.updateMatrixWorld();
+        fadeEl.style.opacity = String(Math.min(1, t / 0.7));   // il nero parte subito e arriva a pieno al 70%
         if (t >= 1) {
           tween.active = false;
           window.location.href = tween.url;
@@ -570,10 +591,9 @@
       let content;
       try { content = await loadContent(); }
       catch (err) {
-        const msg = el('div'); msg.id = 'load-error';
-        msg.textContent = 'Impossibile caricare content.json. Apri il sito da un server (GitHub Pages o python3 -m http.server).';
-        document.getElementById('main').appendChild(msg);
         console.error(err);
+        showProblem(['Non riesco a leggere <code>content.json</code> (' + (err && err.message ? err.message : err) + ').',
+                     'Controlla che <code>content.json</code> sia nel repository accanto a <code>index.html</code> e che sia JSON valido.']);
         return;
       }
       const siteTitle = (content.site && content.site.title) || 'Portfolio';

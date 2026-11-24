@@ -67,12 +67,15 @@
     .stage-bp .cap-bottom textarea { min-height: 84px; }
     .slot {
       border: 1.5px dashed var(--w); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-      cursor: pointer; transition: background .15s ease; padding: 10px; gap: 6px;
+      cursor: default; transition: background .15s ease; padding: 10px; gap: 6px;
     }
     .slot:hover, .slot.over { background: rgba(255,255,255,.14); border-style: solid; }
     .slot.model { position: absolute; top: 110px; bottom: 110px; right: 6%; width: min(46%, 420px); }
     .slot .big { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; }
     .slot .small { font-size: 11px; color: var(--w2); word-break: break-all; }
+    .slot .mini { display: flex; gap: 6px; margin-top: 4px; }
+    .slot .mini button { background: transparent; border: 1px solid var(--w); padding: 4px 8px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; cursor: pointer; }
+    .slot .mini button:hover { background: var(--w); color: var(--blue); }
     .slot svg { width: 64px; height: 64px; stroke: var(--w); fill: none; stroke-width: 1.4; }
 
     .images { margin-top: 18px; }
@@ -157,6 +160,8 @@
 
   <main id="bp"></main>
   <input type="file" id="picker" class="hidden">
+  <input type="file" id="pick-dir" class="hidden" webkitdirectory directory multiple>
+  <input type="file" id="pick-files" class="hidden" multiple accept=".glb,.gltf,.bin,image/*">
 
   <script>
   /* =====================================================================
@@ -240,7 +245,7 @@
     const set = new Set();
     (content.projects || []).forEach((p) => {
       (p.images || []).forEach((i) => { if (i.startsWith('assets/')) set.add(i); });
-      if (p.model && p.model.kind === 'glb' && p.model.src) set.add(p.model.src);
+      if (p.model && p.model.kind === 'glb') (p.model.files && p.model.files.length ? p.model.files : [p.model.src]).forEach((f) => { if (f) set.add(f); });
     });
     return set;
   }
@@ -325,12 +330,50 @@
     setDirty(true); render(); status(imgs.length + ' immagine/i aggiunta/e (da pubblicare)');
   }
 
-  function setModel(project, file) {
-    if (!/\.glb$/i.test(file.name)) { status('Per ora sono supportati i modelli .glb (un solo file).', true); return; }
-    const path = `assets/models/${project.id}-${uid()}.glb`;
-    pending.set(path, file);
-    project.model = { kind: 'glb', src: path, name: file.name };
-    setDirty(true); render(); status('Modello "' + file.name + '" caricato (da pubblicare)');
+  /* ---- Modelli 3D: un .glb singolo oppure una CARTELLA intera (.gltf + .bin + texture) ---- */
+  const MODEL_EXT = /\.(glb|gltf|bin|png|jpe?g|webp|ktx2|basis)$/i;
+
+  async function collectDropped(dt) {            // chiamata in modo sincrono dentro l'evento drop
+    const entries = [...(dt.items || [])].map((i) => (i.webkitGetAsEntry ? i.webkitGetAsEntry() : null)).filter(Boolean);
+    if (!entries.length) return [...dt.files].map((f) => ({ file: f, rel: f.name }));
+    const out = [];
+    async function walk(entry, prefix) {
+      if (entry.isFile) {
+        const file = await new Promise((res, rej) => entry.file(res, rej));
+        out.push({ file, rel: prefix + entry.name });
+      } else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        let batch;
+        do {
+          batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+          for (const e of batch) await walk(e, prefix + entry.name + '/');
+        } while (batch.length);
+      }
+    }
+    for (const e of entries) await walk(e, '');
+    return out;
+  }
+  const fromInput = (files) => [...files].map((f) => ({ file: f, rel: f.webkitRelativePath || f.name }));
+
+  function setModelFiles(project, list) {
+    if (!list.length) return;
+    // se tutto sta dentro un'unica cartella, la tolgo dal percorso
+    const first = list[0].rel.split('/')[0];
+    if (list.every((x) => x.rel.includes('/') && x.rel.split('/')[0] === first)) list.forEach((x) => { x.rel = x.rel.slice(first.length + 1); });
+
+    const glbs = list.filter((x) => /\.glb$/i.test(x.rel)).sort((a, b) => b.file.size - a.file.size);
+    const main = glbs[0] || list.find((x) => /\.gltf$/i.test(x.rel));
+    if (!main) { status('Non trovo un file .glb o .gltf: trascina il file o la cartella del modello.', true); return; }
+    const keep = list.filter((x) => MODEL_EXT.test(x.rel) && !/[#?%]/.test(x.rel));
+    const skipped = list.length - keep.length;
+    const dir = `assets/models/${project.id}-${uid()}/`;
+    const files = [];
+    keep.forEach((x) => { const path = dir + x.rel; pending.set(path, x.file); files.push(path); });
+    project.model = { kind: 'glb', src: dir + main.rel, name: main.rel.split('/').pop(), files };
+    project.dragDir = 1;                              // i modelli caricati si muovono come la banana
+    setDirty(true); render();
+    const mb = (keep.reduce((n, x) => n + x.file.size, 0) / 1048576).toFixed(1);
+    status(`Modello "${project.model.name}" caricato: ${files.length} file, ${mb} MB${skipped ? ` (${skipped} file ignorati)` : ''} — da pubblicare`);
   }
 
   /* ---------------- rendering del blueprint ---------------- */
@@ -381,9 +424,21 @@
       slot.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 64 64"><path d="M32 6 56 19v26L32 58 8 45V19z"/><path d="M8 19l24 13 24-13M32 32v26"/></svg>');
       slot.append(el('div', 'big', 'Modello 3D'));
       const isGlb = p.model && p.model.kind === 'glb';
-      slot.append(el('div', 'small', isGlb ? (p.model.name || p.model.src.split('/').pop()) : 'modello di esempio: ' + ((p.model && p.model.name) || 'banana')));
-      slot.append(el('div', 'small', 'trascina qui un file .glb'));
-      dropzone(slot, (files) => setModel(p, files[0]), false);
+      slot.append(el('div', 'small', isGlb ? (p.model.name || p.model.src.split('/').pop()) + ((p.model.files || []).length > 1 ? ' · ' + p.model.files.length + ' file' : '') : 'modello di esempio: ' + ((p.model && p.model.name) || 'banana')));
+      slot.append(el('div', 'small', 'trascina qui una cartella (o un .glb)'));
+      const mini = el('div', 'mini');
+      const bDir = el('button', null, 'Scegli cartella'), bFile = el('button', null, 'Scegli file');
+      bDir.type = bFile.type = 'button';
+      bDir.onclick = () => { const i = $('#pick-dir'); i.value = ''; i.onchange = () => setModelFiles(p, fromInput(i.files)); i.click(); };
+      bFile.onclick = () => { const i = $('#pick-files'); i.value = ''; i.onchange = () => setModelFiles(p, fromInput(i.files)); i.click(); };
+      mini.append(bDir, bFile); slot.append(mini);
+      slot.addEventListener('dragover', (e) => { if ([...e.dataTransfer.types].includes('Files')) { e.preventDefault(); slot.classList.add('over'); } });
+      slot.addEventListener('dragleave', () => slot.classList.remove('over'));
+      slot.addEventListener('drop', (e) => {
+        e.preventDefault(); e.stopPropagation(); slot.classList.remove('over');
+        const pr = collectDropped(e.dataTransfer);          // si avvia subito, dentro l'evento
+        pr.then((list) => setModelFiles(p, list)).catch((err) => status('Errore nella lettura della cartella: ' + err.message, true));
+      });
       stage.append(top, bottom, slot);
       fr.append(stage);
 

@@ -126,7 +126,7 @@ function samplePoint(parts, totalArea) {
   let lo = 0, hi = part.triCount - 1;
   while (lo < hi) { const mid = (lo + hi) >> 1; if (part.cum[mid] < target) lo = mid + 1; else hi = mid; }
   const g = part.mesh.geometry;
-  const pos = g.attributes.position, nor = g.attributes.normal, col = g.attributes.color;
+  const pos = g.attributes.position, nor = g.attributes.normal, col = g.attributes.color, uvAttr = g.attributes.uv;
   const [i0, i1, i2] = triIndices(g.index, lo);
   // coordinate baricentriche casuali
   let u = Math.random(), v = Math.random();
@@ -146,6 +146,13 @@ function samplePoint(parts, totalArea) {
   else {
     const m = Array.isArray(part.mesh.material) ? part.mesh.material[0] : part.mesh.material;
     color = m && m.color ? m.color.clone() : new THREE.Color(1, 1, 1);
+  }
+  // se il materiale ha una texture, il colore reale è quello della texture nel punto scelto
+  const mat = Array.isArray(part.mesh.material) ? part.mesh.material[0] : part.mesh.material;
+  if (mat && mat.map && uvAttr) {
+    const uv = mix(uvAttr, 2);
+    const t = sampleTexture(mat.map, uv[0], uv[1]);
+    if (t) color.multiply(t);
   }
   return { part, position, normal, color };
 }
@@ -200,4 +207,23 @@ function makeTextTexture(text, color, aspect) {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
   return tex;
+}
+
+/* Colore della texture in un punto (UV): la copia ridotta a 64x64 si crea una sola volta per texture */
+function sampleTexture(map, u, v) {
+  try {
+    const img = map.image;
+    if (!img || !(img.width > 0)) return null;
+    if (!map.userData.__small) {
+      const c = document.createElement('canvas'); c.width = c.height = 64;
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, 64, 64);
+      map.userData.__small = ctx.getImageData(0, 0, 64, 64);
+    }
+    const data = map.userData.__small;
+    const fu = u - Math.floor(u), fv = v - Math.floor(v);
+    const x = Math.min(63, Math.floor(fu * 64)), y = Math.min(63, Math.floor((map.flipY ? 1 - fv : fv) * 64));
+    const i = (y * 64 + x) * 4;
+    return new THREE.Color().setRGB(data.data[i] / 255, data.data[i + 1] / 255, data.data[i + 2] / 255, THREE.SRGBColorSpace);
+  } catch (e) { return null; }
 }

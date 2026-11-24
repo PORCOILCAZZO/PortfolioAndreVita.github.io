@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /* ============ Modelli procedurali (placeholder) ============ */
 export function buildBanana() {
@@ -118,7 +121,13 @@ export const BUILTIN = { banana: buildBanana, apple: buildApple };
    Restituisce sempre un Object3D centrato in (0,0,0) e di dimensioni confrontabili (max ~3.2 unità). */
 export async function loadModel(spec) {
   if (spec && spec.kind === 'glb' && spec.src) {
-    const gltf = await new GLTFLoader().loadAsync(spec.src);
+    // Supporta .glb (texture incluse) e .gltf con .bin e texture esterne caricati nella stessa cartella
+    const loader = new GLTFLoader();
+    const draco = new DRACOLoader();
+    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    loader.setDRACOLoader(draco);
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    const gltf = await loader.loadAsync(spec.src);
     const inner = gltf.scene;
     const box = new THREE.Box3().setFromObject(inner);
     const size = box.getSize(new THREE.Vector3());
@@ -134,4 +143,12 @@ export async function loadModel(spec) {
   }
   const name = (spec && spec.name) || 'banana';
   return (BUILTIN[name] || buildBanana)();
+}
+
+/* Illuminazione d'ambiente per i modelli .glb con materiali PBR (senza, i materiali metallici risultano neri) */
+export function makeEnvironment(renderer) {
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const tex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+  return tex;
 }

@@ -163,16 +163,20 @@
       }, undefined, () => console.warn('Immagine non trovata:', src));
     });
 
-    /* ---- Rotazione: la sfera segue il dito/mouse, senza limiti ---- */
+    /* ---- Rotazione: la sfera segue il dito/mouse, senza limiti ----
+       1 dito / mouse: trascina la sfera.
+       2 dita: pizzico = zoom, spostare le dita insieme = ruota la sfera, girare le dita = fa ruotare la sfera su sé stessa (rollio). */
     const FOV_MIN = 25, FOV_MAX = 95;
     let fovTarget = 65;
     const identity = new THREE.Quaternion();
     const spin = new THREE.Quaternion();
     const dq = new THREE.Quaternion();
+    const roll = new THREE.Quaternion();
+    const Z_AXIS = new THREE.Vector3(0, 0, 1);
     const prevDir = new THREE.Vector3(), currDir = new THREE.Vector3();
     let dragging = false;
     const pointers = new Map();
-    let pinchStart = null;
+    let pinch = null;
 
     // direzione (nello spazio della camera) del raggio che passa per il punto dello schermo
     function rayDir(x, y, out) {
@@ -182,27 +186,37 @@
       const t = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
       return out.set(nx * t * camera.aspect, ny * t, -1).normalize();
     }
+    function twoFingers() {
+      const [a, b] = [...pointers.values()];
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), ang: Math.atan2(b.y - a.y, b.x - a.x) };
+    }
 
     canvas.addEventListener('pointerdown', (e) => {
       canvas.setPointerCapture(e.pointerId);
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      spin.copy(identity);
       if (pointers.size === 1) {
         dragging = true; canvas.classList.add('dragging');
         rayDir(e.clientX, e.clientY, prevDir);
-        spin.copy(identity);
       } else if (pointers.size === 2) {
         dragging = false;
-        const [a, b] = [...pointers.values()];
-        pinchStart = { d: Math.hypot(a.x - b.x, a.y - b.y), fov: fovTarget };
+        const f = twoFingers();
+        pinch = { d: f.d, fov: fovTarget, ang: f.ang, dir: rayDir(f.x, f.y, new THREE.Vector3()) };
       }
     });
     canvas.addEventListener('pointermove', (e) => {
       if (!pointers.has(e.pointerId)) return;
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (pointers.size === 2 && pinchStart) {            // pinch = zoom
-        const [a, b] = [...pointers.values()];
-        const d = Math.hypot(a.x - b.x, a.y - b.y);
-        fovTarget = THREE.MathUtils.clamp(pinchStart.fov * (pinchStart.d / Math.max(d, 1)), FOV_MIN, FOV_MAX);
+      if (pointers.size === 2 && pinch) {
+        const f = twoFingers();
+        fovTarget = THREE.MathUtils.clamp(pinch.fov * (pinch.d / f.d), FOV_MIN, FOV_MAX);   // zoom
+        rayDir(f.x, f.y, currDir);
+        dq.setFromUnitVectors(pinch.dir, currDir);                                          // le dita trascinano la sfera
+        let dA = f.ang - pinch.ang;
+        if (dA > Math.PI) dA -= 2 * Math.PI; else if (dA < -Math.PI) dA += 2 * Math.PI;
+        roll.setFromAxisAngle(Z_AXIS, -dA);                                                 // le dita girano la sfera
+        world.quaternion.premultiply(roll).premultiply(dq).normalize();
+        pinch.dir.copy(currDir); pinch.ang = f.ang;
         return;
       }
       if (!dragging) return;
@@ -215,10 +229,11 @@
     function endPointer(e) {
       pointers.delete(e.pointerId);
       if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
-      if (pointers.size === 0) { dragging = false; canvas.classList.remove('dragging'); pinchStart = null; }
-      else if (pointers.size === 1) {                     // dopo un pinch, riprende a trascinare con il dito rimasto
+      pinch = null;
+      if (pointers.size === 0) { dragging = false; canvas.classList.remove('dragging'); }
+      else if (pointers.size === 1) {                     // dopo i due diti, il dito rimasto continua a trascinare
         const [p] = [...pointers.values()];
-        dragging = true; rayDir(p.x, p.y, prevDir); pinchStart = null; spin.copy(identity);
+        dragging = true; rayDir(p.x, p.y, prevDir); spin.copy(identity);
       }
     }
     canvas.addEventListener('pointerup', endPointer);

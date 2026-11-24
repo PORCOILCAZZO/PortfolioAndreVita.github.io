@@ -18,11 +18,11 @@
 1. GitHub -> Settings -> Developer settings -> Personal access tokens -> Fine-grained tokens -> Generate new token.
    Repository access: *Only select repositories* (solo questo). Permissions -> Repository permissions -> **Contents: Read and write**.
 2. Apri `admin.html`, inserisci utente, repository, branch, token e scegli una password: il token viene cifrato nel browser.
-3. Trascina immagini sul "+" e un file `.glb` sul riquadro Modello 3D; modifica i testi direttamente nel blueprint.
+3. Trascina immagini sul "+"; sul riquadro Modello 3D trascina **la cartella intera** del modello (.gltf/.glb + .bin + texture) oppure un singolo `.glb`. Modifica i testi direttamente nel blueprint.
 4. **Pubblica** crea un solo commit. Il sito si aggiorna dopo 1-2 minuti.
 
 ## Aggiungere un nuovo modello 3D
-Basta trascinare un `.glb` nel riquadro: la scritta "Click for more" viene applicata in automatico, in un punto casuale
+Basta trascinare la cartella (o il `.glb`) nel riquadro: la scritta "Click for more" viene applicata in automatico, in un punto casuale
 della superficie (mai oltre il 20% dell'area del modello).
 
 ## Provare in locale
