@@ -5,34 +5,22 @@
   "projects": [
     {
       "id": "banana",
-      "title": "circonvalley",
-      "subtitle": "Cycling Community",
+      "title": "Banana",
+      "subtitle": "Modello 3D interattivo",
       "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
-      "model": {
-        "kind": "glb",
-        "src": "assets/models/banana-mwuxhvp2f4py/model.glb",
-        "name": "model.glb",
-        "files": [
-          "assets/models/banana-mwuxhvp2f4py/model.glb",
-          "assets/models/banana-mwuxhvp2f4py/tex_u0_v0_diffuse.jpg",
-          "assets/models/banana-mwuxhvp2f4py/tex_u0_v0_normal.jpg"
-        ]
-      },
+      "model": { "kind": "builtin", "name": "banana" },
       "dragDir": 1,
       "images": [
-        "assets/images/banana-mwuxnvsgkefs.jpg",
-        "assets/images/banana-mwuxnvtg47le.jpg",
-        "assets/images/banana-mwuxnvud3q98.jpg",
-        "assets/images/banana-mwuxnvxlnp9g.jpg",
-        "assets/images/banana-mwuxnvylmb1w.jpg",
-        "assets/images/banana-mwuxnvzc44kg.jpg",
-        "assets/images/banana-mwuxnw071qhw.jpg",
-        "assets/images/banana-mwuxnw0iw3wh.jpg",
-        "assets/images/banana-mwuxnw17rx73.jpg",
-        "assets/images/banana-mwuxnw1l9v37.jpg",
-        "assets/images/banana-mwuxnw2diqvo.jpg",
-        "assets/images/banana-mwuxnw54lf6j.jpg",
-        "assets/images/banana-mwuxnw58dobr.jpg"
+        "assets/images/placeholder-01.jpg",
+        "assets/images/placeholder-02.jpg",
+        "assets/images/placeholder-03.jpg",
+        "assets/images/placeholder-04.jpg",
+        "assets/images/placeholder-05.jpg",
+        "assets/images/placeholder-06.jpg",
+        "assets/images/placeholder-07.jpg",
+        "assets/images/placeholder-08.jpg",
+        "assets/images/placeholder-09.jpg",
+        "assets/images/placeholder-10.jpg"
       ]
     },
     {
@@ -40,10 +28,7 @@
       "title": "Mela",
       "subtitle": "Modello 3D interattivo",
       "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
-      "model": {
-        "kind": "builtin",
-        "name": "apple"
-      },
+      "model": { "kind": "builtin", "name": "apple" },
       "dragDir": -1,
       "images": [
         "assets/images/placeholder-06.jpg",
@@ -63,33 +48,10 @@
     "title": "Contatti",
     "note": "(Dati placeholder: da sostituire con i tuoi.)",
     "blocks": [
-      {
-        "label": "Indirizzo",
-        "lines": [
-          "Sua Santità il Papa",
-          "Palazzo Apostolico",
-          "00120 Città del Vaticano"
-        ]
-      },
-      {
-        "label": "Sala Stampa della Santa Sede",
-        "lines": [
-          "Via della Conciliazione 54",
-          "00120 Città del Vaticano"
-        ]
-      },
-      {
-        "label": "Email",
-        "lines": [
-          "vaticanmedia@spc.va"
-        ]
-      },
-      {
-        "label": "Telefono",
-        "lines": [
-          "+39 06 698 921"
-        ]
-      }
+      { "label": "Indirizzo", "lines": ["Sua Santità il Papa", "Palazzo Apostolico", "00120 Città del Vaticano"] },
+      { "label": "Sala Stampa della Santa Sede", "lines": ["Via della Conciliazione 54", "00120 Città del Vaticano"] },
+      { "label": "Email", "lines": ["vaticanmedia@spc.va"] },
+      { "label": "Telefono", "lines": ["+39 06 698 921"] }
     ]
   }
 }
