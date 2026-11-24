@@ -1,14 +1,23 @@
 {
   "site": {
-    "title": "Portfolio AndreVita"
+    "title": "Portfolio Andrea Vitali"
   },
   "projects": [
     {
       "id": "banana",
-      "title": "Banana",
-      "subtitle": "Modello 3D interattivo",
-      "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
-      "model": { "kind": "builtin", "name": "banana" },
+      "title": "circonvalley",
+      "subtitle": "CyclingCommunity",
+      "description": "Biggest cycling community in Milano",
+      "model": {
+        "kind": "glb",
+        "src": "assets/models/banana-mwuyfo42s1z4/model.glb",
+        "name": "model.glb",
+        "files": [
+          "assets/models/banana-mwuyfo42s1z4/model.glb",
+          "assets/models/banana-mwuyfo42s1z4/tex_u0_v0_diffuse.jpg",
+          "assets/models/banana-mwuyfo42s1z4/tex_u0_v0_normal.jpg"
+        ]
+      },
       "dragDir": 1,
       "images": [
         "assets/images/placeholder-01.jpg",
@@ -28,7 +37,10 @@
       "title": "Mela",
       "subtitle": "Modello 3D interattivo",
       "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
-      "model": { "kind": "builtin", "name": "apple" },
+      "model": {
+        "kind": "builtin",
+        "name": "apple"
+      },
       "dragDir": -1,
       "images": [
         "assets/images/placeholder-06.jpg",
@@ -48,10 +60,33 @@
     "title": "Contatti",
     "note": "(Dati placeholder: da sostituire con i tuoi.)",
     "blocks": [
-      { "label": "Indirizzo", "lines": ["Sua Santità il Papa", "Palazzo Apostolico", "00120 Città del Vaticano"] },
-      { "label": "Sala Stampa della Santa Sede", "lines": ["Via della Conciliazione 54", "00120 Città del Vaticano"] },
-      { "label": "Email", "lines": ["vaticanmedia@spc.va"] },
-      { "label": "Telefono", "lines": ["+39 06 698 921"] }
+      {
+        "label": "Indirizzo",
+        "lines": [
+          "Sua Santità il Papa",
+          "Palazzo Apostolico",
+          "00120 Città del Vaticano"
+        ]
+      },
+      {
+        "label": "Sala Stampa della Santa Sede",
+        "lines": [
+          "Via della Conciliazione 54",
+          "00120 Città del Vaticano"
+        ]
+      },
+      {
+        "label": "Email",
+        "lines": [
+          "vaticanmedia@spc.va"
+        ]
+      },
+      {
+        "label": "Telefono",
+        "lines": [
+          "+39 06 698 921"
+        ]
+      }
     ]
   }
 }
