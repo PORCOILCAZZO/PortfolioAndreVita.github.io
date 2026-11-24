@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portfolio AndreVita</title>
+  <style>
+    /* Font Broadsheet: metti il file in "fonts/Broadsheet.woff2" (o .woff / .otf / .ttf).
+       Finché il file non c'è, la pagina usa Helvetica come ripiego. */
+    @font-face {
+      font-family: "Broadsheet";
+      src: url("fonts/Broadsheet.woff2") format("woff2"),
+           url("fonts/Broadsheet.woff") format("woff"),
+           url("fonts/Broadsheet.otf") format("opentype"),
+           url("fonts/Broadsheet.ttf") format("truetype");
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    :root {
+      --fg: #000; --bg: #fff;
+      --font: "Broadsheet", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      --helv: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    html, body { margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font);
+    }
+
+    /* ---------- Header ---------- */
+    header {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 24px;
+      background: var(--bg);
+      z-index: 20;
+    }
+    .logo {
+      font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;
+      color: var(--fg); text-decoration: none;
+      opacity: 0; transition: opacity .3s ease;
+    }
+    body.scrolled .logo { opacity: 1; }
+
+    /* ---------- Menu a panino ---------- */
+    .burger {
+      width: 44px; height: 44px; padding: 0;
+      background: none; border: 0; cursor: pointer;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px;
+    }
+    .burger span {
+      display: block; width: 26px; height: 2px; background: var(--fg);
+      transition: transform .25s ease, opacity .2s ease;
+    }
+    .burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+    .burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+    nav {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 28px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s ease;
+      z-index: 10;
+    }
+    nav.open { opacity: 1; pointer-events: auto; }
+    nav a {
+      font-size: clamp(2rem, 6vw, 3.5rem); font-weight: 700;
+      color: var(--fg); text-decoration: none;
+    }
+    nav a:hover { text-decoration: underline; text-underline-offset: 8px; }
+
+    /* ---------- Sezioni ---------- */
+    section { min-height: 100vh; min-height: 100svh; }
+
+    /* Landing */
+    #home {
+      position: relative;
+      display: flex; justify-content: center; align-items: center;
+    }
+    #home h1 {
+      margin: 0; padding: 0 24px; text-align: center;
+      font-size: clamp(2.5rem, 9vw, 7rem);
+      font-weight: 700; letter-spacing: -0.03em; line-height: 1;
+      transform: translateY(-50px);
+    }
+    .scroll-arrow {
+      position: absolute; left: 50%; bottom: 78px;
+      width: 40px; height: 40px; margin-left: -20px;
+      display: flex; justify-content: center; align-items: center;
+      animation: bob 1.8s ease-in-out infinite;
+    }
+    .scroll-arrow svg { width: 22px; height: 22px; }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    /* Progetti */
+    .project { min-height: 0; padding: 0; overflow-x: clip; scroll-margin-top: 84px; }
+
+    .stage { position: relative; width: 100%; height: calc(min(70vh, 640px) + 120px); }  /* a tutta larghezza, senza bordi; i viewer si toccano */
+    .stage canvas { width: 100%; height: 100%; display: block; pointer-events: none; }
+    /* Area attiva per ruotare/cliccare: da 20px sotto il sottotitolo a 20px sopra la descrizione (top/bottom calcolati in JS) */
+    .hit { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 1; cursor: grab; touch-action: none; }
+    .hit.over-model { cursor: pointer; }
+    .hit.dragging { cursor: grabbing; }
+
+    /* Cartiglio del progetto (sopra il canvas, non intercetta il mouse) */
+    .caption {
+      position: absolute; left: max(24px, calc((100% - 760px) / 2)); padding: 0 4px;
+      max-width: min(480px, 60%);
+      pointer-events: none;
+      font-family: var(--font);
+    }
+    .caption.top { top: 75px; }
+    .caption.bottom { bottom: 100px; }  /* il testo parte dal bordo inferiore e cresce verso l'alto */
+    .caption h2 {
+      margin: 0; font-size: clamp(2.8rem, 6vw, 4rem);
+      font-weight: 700; text-transform: uppercase; letter-spacing: -0.02em; line-height: 1;
+    }
+    .caption h3 { margin: 8px 0 0; font-size: 1rem; font-weight: 400; color: #333; }
+    .caption p { margin: 0; font-size: .95rem; line-height: 1.45; color: #111; }
+
+    /* Controlli in basso a destra: Reset sopra, zoom sotto. Senza outline, testo in Helvetica */
+    .controls {
+      position: absolute; right: max(24px, calc((100% - 760px) / 2)); bottom: 100px;
+      display: flex; flex-direction: column; align-items: stretch; gap: 8px; z-index: 2;
+    }
+    .zoom { display: flex; gap: 8px; }
+    .btn {
+      background: #fff; color: #000;
+      border: 0; outline: 0; border-radius: 4px; cursor: pointer;
+      font-family: var(--helv);
+      font-weight: 700; line-height: 1;
+      transition: opacity .2s ease, transform .2s ease, background .15s ease;
+    }
+    .btn:hover { background: #eee; }
+    .btn:focus-visible { box-shadow: 0 0 0 2px #000; }
+    .zoom .btn { width: 40px; height: 40px; font-size: 1.4rem; padding: 0; }
+    .reset-btn { height: 40px; padding: 0; font-size: .95rem; letter-spacing: .02em;
+      opacity: 0; transform: translateY(6px); pointer-events: none; }
+    .reset-btn.visible { opacity: 1; transform: none; pointer-events: auto; }
+
+    /* Contatti */
+    #contatti { padding: 150px 24px 60px; }
+    #contatti .contact-wrap { max-width: 640px; margin: 0 auto; }
+    #contatti h2.title { font-size: clamp(2rem, 5vw, 3rem); margin: 0 0 32px; letter-spacing: -0.02em; }
+    #contatti h3 { font-size: 1rem; text-transform: uppercase; letter-spacing: .08em; margin: 32px 0 8px; }
+    #contatti p { margin: 0 0 6px; line-height: 1.5; font-size: 1.1rem; }
+    #contatti .note { color: #666; font-size: .9rem; }
+    #contatti a { color: var(--fg); }
+
+    /* ---------- Transizione "dentro il modello" ---------- */
+    #project-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #000; z-index: 1000; opacity: 0; pointer-events: none; }
+    #load-error { padding: 120px 24px; font-family: var(--helv); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a class="logo" href="#home" id="logo">Portfolio AndreVita</a>
+    <button class="burger" id="burger" aria-label="Apri il menu" aria-expanded="false" aria-controls="menu">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <nav id="menu" aria-hidden="true">
+    <a href="#progetti">progetti</a>
+    <a href="#contatti">contatti</a>
+  </nav>
+
+  <main id="main">
+    <!-- Landing -->
+    <section id="home">
+      <h1 id="home-title">Portfolio AndreVita</h1>
+      <a class="scroll-arrow" href="#progetti" aria-label="Scorri verso il basso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 4v15M5 12l7 7 7-7"/>
+        </svg>
+      </a>
+    </section>
+    <!-- Le sezioni dei progetti e dei contatti vengono create da content.json -->
+  </main>
+
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    /* Se qualcosa non si carica (file mancanti, aperto con doppio clic, rete...) lo diciamo a schermo invece di restare muti */
+    function showProblem(lines) {
+      const box = document.createElement('div');
+      box.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:2000;background:#000;color:#fff;padding:16px 18px;font:14px/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif;border-radius:4px;max-width:720px;margin:0 auto;';
+      box.innerHTML = '<b>Il sito non riesce a caricarsi.</b><br>' + lines.map((l) => '&bull; ' + l).join('<br>');
+      document.body.appendChild(box);
+    }
+    if (location.protocol === 'file:') {
+      showProblem(['Hai aperto il file con doppio clic: i moduli JavaScript non funzionano da file locale.',
+                   'Apri il sito da GitHub Pages oppure avvia <code>python3 -m http.server 8000</code> nella cartella e vai su http://localhost:8000']);
+    }
+    let THREE, loadModel, makeEnvironment, addClickForMore;
+    try {
+      THREE = await import('three');
+      ({ loadModel, makeEnvironment } = await import('./js/models.js'));
+      ({ addClickForMore } = await import('./js/decal.js'));
+    } catch (err) {
+      console.error(err);
+      showProblem(['Non riesco a caricare i file del sito: ' + (err && err.message ? err.message : err),
+                   'Controlla che nel repository ci sia la cartella <code>js/</code> con <code>models.js</code> e <code>decal.js</code> accanto a <code>index.html</code>.',
+                   'Controlla anche la connessione (la libreria 3D arriva da cdn.jsdelivr.net).']);
+      throw err;
+    }
+
+    /* ================= Contenuti (da content.json, modificabile dalla pagina admin) ================= */
+    async function loadContent() {
+      const res = await fetch('content.json?v=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('content.json: ' + res.status);
+      return res.json();
+    }
+
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text != null) e.textContent = text;
+      return e;
+    }
+
+    function linkLine(parent, line) {
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(line)) {
+        const a = el('a', null, line); a.href = 'mailto:' + line; parent.appendChild(a);
+      } else if (/^\+?[\d\s().-]{7,}$/.test(line)) {
+        const a = el('a', null, line); a.href = 'tel:' + line.replace(/[^\d+]/g, ''); parent.appendChild(a);
+      } else {
+        parent.appendChild(document.createTextNode(line));
+      }
+    }
+
+    function buildProjectSection(project, index) {
+      const section = el('section', 'project');
+      section.id = index === 0 ? 'progetti' : project.id;
+      section.dataset.id = project.id;
+      const stage = el('div', 'stage');
+      stage.appendChild(document.createElement('canvas'));
+      stage.appendChild(el('div', 'hit'));
+
+      const top = el('div', 'caption top');
+      top.appendChild(el('h2', null, project.title || ''));
+      top.appendChild(el('h3', null, project.subtitle || ''));
+      stage.appendChild(top);
+
+      const bottom = el('div', 'caption bottom');
+      bottom.appendChild(el('p', null, project.description || ''));
+      stage.appendChild(bottom);
+
+      const controls = el('div', 'controls');
+      const reset = el('button', 'btn reset-btn', 'Reset'); reset.type = 'button';
+      const zoom = el('div', 'zoom');
+      const zOut = el('button', 'btn zoom-out', '−'); zOut.type = 'button'; zOut.setAttribute('aria-label', 'Riduci');
+      const zIn = el('button', 'btn zoom-in', '+'); zIn.type = 'button'; zIn.setAttribute('aria-label', 'Ingrandisci');
+      zoom.append(zOut, zIn);
+      controls.append(reset, zoom);
+      stage.appendChild(controls);
+
+      section.appendChild(stage);
+      return section;
+    }
+
+    function buildContacts(contacts) {
+      const section = el('section'); section.id = 'contatti';
+      const wrap = el('div', 'contact-wrap');
+      wrap.appendChild(el('h2', 'title', contacts.title || 'Contatti'));
+      if (contacts.note) wrap.appendChild(el('p', 'note', contacts.note));
+      (contacts.blocks || []).forEach((b) => {
+        wrap.appendChild(el('h3', null, b.label || ''));
+        const p = el('p');
+        (b.lines || []).forEach((line, i) => { if (i) p.appendChild(document.createElement('br')); linkLine(p, line); });
+        wrap.appendChild(p);
+      });
+      section.appendChild(wrap);
+      return section;
+    }
+
+    /* ================= Menu & header ================= */
+    const burger = document.getElementById('burger');
+    const menu = document.getElementById('menu');
+    function setMenu(open) {
+      menu.classList.toggle('open', open);
+      burger.setAttribute('aria-expanded', String(open));
+      menu.setAttribute('aria-hidden', String(!open));
+    }
+    burger.addEventListener('click', () => setMenu(!menu.classList.contains('open')));
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', (e) => {
+      setMenu(false);
+      if (a.getAttribute('href') === '#contatti') {          // "contatti" porta in fondo al sito, così la sezione si vede tutta
+        e.preventDefault();
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+      }
+    }));
+    function onScroll() {
+      document.body.classList.toggle('scrolled', window.scrollY > window.innerHeight * 0.5);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';   // il browser non ripristina l'ultima posizione
+
+    /* Tornando indietro dalla pagina del progetto, riparte pulita (niente nero rimasto in cache) */
+    window.addEventListener('pageshow', (e) => { if (e.persisted) location.reload(); });
+
+    /* ================= Viewer 3D ================= */
+    const TRACK_RADIUS = 0.85;
+    const RPM = 5;
+    const CLICK = 1.25;                         // ogni click di +/- cambia la distanza della camera di questo fattore
+    const VERTICAL_AXIS = new THREE.Vector3(0, 1, 0);
+    const identity = new THREE.Quaternion();
+    const clock = new THREE.Clock();
+    const viewers = [];
+    const IS_MOBILE = window.matchMedia('(max-width: 600px)').matches;
+    let entering = false;          // true mentre si apre un progetto (gli altri modelli restano fermi)
+    let activeClose = null;        // funzione che richiude il progetto aperto
+
+    /* Il tasto indietro del browser richiude il progetto aperto */
+    window.addEventListener('popstate', () => { if (activeClose) activeClose(); });
+    /* Messaggi dalla pagina del progetto (caricata in un iframe) */
+    window.addEventListener('message', (e) => {
+      if (e.data === 'close-project' && activeClose) history.back();
+    });
+
+    function createViewer(stage, project) {
+      const canvas = stage.querySelector('canvas');
+      const resetBtn = stage.querySelector('.reset-btn');
+      const hit = stage.querySelector('.hit');
+      const capTop = stage.querySelector('.caption.top');
+      const capBottom = stage.querySelector('.caption.bottom');
+
+      // L'area di rotazione/click copre tutto lo stage: il modello resta cliccabile anche sotto i testi
+      hit.style.top = '0'; hit.style.bottom = '0';
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      // Zoom di partenza: desktop 1 click di - rispetto a 6.5; mobile 2 click di - rispetto a prima (=13)
+      const START_Z = IS_MOBILE ? 13 / CLICK : 6.5;
+      camera.position.set(0, 0, START_Z);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 1.1));
+      const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+      sun.position.set(3, 4, 5);
+      scene.add(sun);
+
+      const isGlb = !!(project.model && project.model.kind === 'glb');
+      const dragDir = -1;   // stesso movimento della mela per tutti i progetti
+      const initialQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.25, -0.5, 0.15));
+      let model = null;
+
+      // Il modello (procedurale o .glb) si carica in modo asincrono; "CLICKME" si applica a qualunque modello
+      loadModel(project.model).then((m) => {
+        model = m;
+        model.quaternion.copy(initialQuat);
+        if (isGlb) { try { scene.environment = makeEnvironment(renderer); } catch (e) { console.warn('ambiente non creato', e); } }
+        try {
+          const res = addClickForMore(model);
+          console.info('[click-for-more]', project.id, res ? 'superficie coperta: ' + (res.coveredRatio * 100).toFixed(1) + '%' : 'non applicato');
+        } catch (err) { console.warn('CLICKME non applicato:', err); }
+        scene.add(model);
+      }).catch((err) => console.error('Modello non caricato', project.id, err));
+
+      // Zoom morbido
+      const ZOOM_MIN = 3.5, ZOOM_MAX = 14, ZOOM_STEP = CLICK;
+      let zoomTarget = camera.position.z;
+      stage.querySelector('.zoom-in').addEventListener('click', () => {
+        zoomTarget = THREE.MathUtils.clamp(zoomTarget / ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
+      });
+      stage.querySelector('.zoom-out').addEventListener('click', () => {
+        zoomTarget = THREE.MathUtils.clamp(zoomTarget * ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
+      });
+
+      const state = { dragging: false, autoRotate: true, resetting: false, visible: true, frozen: false };
+      const prev = new THREE.Vector3();
+      const curr = new THREE.Vector3();
+      const dq = new THREE.Quaternion();
+      const spin = new THREE.Quaternion();
+      const idleSpin = new THREE.Quaternion();
+      const raycaster = new THREE.Raycaster();
+
+      /* Arcball: rotazione senza limiti, la direzione dipende da dove clicchi */
+      function sphereVector(clientX, clientY, out) {
+        const rect = canvas.getBoundingClientRect();
+        const half = Math.min(rect.width, rect.height) / 2;
+        const x = ((clientX - rect.left) - rect.width / 2) / (half * TRACK_RADIUS);
+        const y = -((clientY - rect.top) - rect.height / 2) / (half * TRACK_RADIUS);
+        const d2 = x * x + y * y;
+        const z = d2 <= 0.5 ? Math.sqrt(1 - d2) : 0.5 / Math.sqrt(d2);
+        return out.set(x, y, z).normalize();
+      }
+
+      /* Raggio dal puntatore verso il modello: restituisce il punto toccato sulla sua superficie (o null) */
+      function pick(clientX, clientY) {
+        if (!model) return null;
+        const rect = canvas.getBoundingClientRect();
+        const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+        camera.updateMatrixWorld();
+        raycaster.setFromCamera(ndc, camera);
+        const hits = raycaster.intersectObject(model, true);
+        return hits.length ? hits[0] : null;
+      }
+
+      const down = { x: 0, y: 0, t: 0, moved: false };
+
+      hit.addEventListener('pointerdown', (e) => {
+        if (entering) return;
+        state.dragging = true;
+        state.resetting = false;
+        hit.setPointerCapture(e.pointerId);
+        hit.classList.add('dragging');
+        down.x = e.clientX; down.y = e.clientY; down.t = performance.now(); down.moved = false;
+        sphereVector(e.clientX, e.clientY, prev);
+        spin.copy(identity);
+      });
+
+      hit.addEventListener('pointermove', (e) => {
+        if (entering) return;
+        if (!state.dragging) {                       // il cursore diventa "mano" sopra il modello cliccabile
+          hit.classList.toggle('over-model', !!pick(e.clientX, e.clientY));
+          return;
+        }
+        if (!down.moved) {                           // piccola zona morta: un click non deve ruotare il modello
+          if (Math.hypot(e.clientX - down.x, e.clientY - down.y) < 5) return;
+          down.moved = true;
+          sphereVector(e.clientX, e.clientY, prev);
+          return;
+        }
+        sphereVector(e.clientX, e.clientY, curr);
+        if (dragDir > 0) dq.setFromUnitVectors(curr, prev);
+        else dq.setFromUnitVectors(prev, curr);
+        if (model) model.quaternion.premultiply(dq).normalize();
+        spin.copy(dq);
+        prev.copy(curr);
+        state.autoRotate = false;            // la rotazione automatica si ferma...
+        resetBtn.classList.add('visible');   // ...e compare il Reset
+      });
+
+      function endDrag(e) {
+        if (!state.dragging) return;
+        state.dragging = false;
+        hit.classList.remove('dragging');
+        if (hit.hasPointerCapture(e.pointerId)) hit.releasePointerCapture(e.pointerId);
+        // click (senza trascinamento) sul modello -> si entra nel progetto
+        const isClick = !down.moved && performance.now() - down.t < 700;
+        if (isClick && e.type === 'pointerup') {
+          const h = pick(e.clientX, e.clientY);
+          if (h) enter();
+        }
+      }
+      hit.addEventListener('pointerup', endDrag);
+      hit.addEventListener('pointercancel', endDrag);
+
+      resetBtn.addEventListener('click', () => {
+        state.resetting = true;
+        state.autoRotate = true;
+        spin.copy(identity);
+        resetBtn.classList.remove('visible');
+      });
+
+      new IntersectionObserver(([entry]) => { state.visible = entry.isIntersecting; }).observe(stage);
+
+      /* ---------- Transizione ----------
+         1. al click il modello fa un giro completo in 0,5 s attorno al proprio asse verticale (qualunque sia
+            il suo orientamento: ritorna esattamente com'era);
+         2. nel frattempo la pagina del progetto si carica in un iframe nascosto;
+         3. in altri 0,5 s la landing si dissolve nella pagina del progetto, senza passare dal nero. */
+      const SPIN_MS = 500, FADE_MS = 500, TURNS = 1;
+      const tween = { active: false, phase: '', t0: 0, q0: new THREE.Quaternion(), ready: false, frame: null, tFade: 0 };
+      const easeInOut = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const spinQ = new THREE.Quaternion();
+      let saved = null;
+
+      const blockKeys = new Set([' ', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
+      const stopScroll = (e) => { if (e.type !== 'keydown' || blockKeys.has(e.key)) e.preventDefault(); };
+
+      function enter() {
+        if (entering) return;
+        entering = true;
+        saved = { auto: state.autoRotate };
+        state.autoRotate = false; state.resetting = false; spin.copy(identity);
+        hit.classList.remove('over-model');
+        // blocco lo scroll SENZA toccare il layout (niente scomparsa della scrollbar = niente salti)
+        ['wheel', 'touchmove', 'keydown'].forEach((ev) => window.addEventListener(ev, stopScroll, { passive: false }));
+
+        // la pagina del progetto si carica subito, invisibile
+        const url = 'progetto.html?p=' + encodeURIComponent(project.id);
+        const frame = document.createElement('iframe');
+        frame.id = 'project-frame';
+        frame.title = project.title || 'Progetto';
+        const onMsg = (e) => { if (e.source === frame.contentWindow && e.data === 'project-ready') tween.ready = true; };
+        window.addEventListener('message', onMsg);
+        frame.src = url + (url.includes('?') ? '&' : '?') + 'embed=1';
+        document.body.appendChild(frame);
+        tween.frame = frame; tween.ready = false; tween.tFade = 0; tween.onMsg = onMsg;
+
+        tween.q0.copy(model.quaternion);
+        tween.t0 = performance.now();
+        tween.phase = 'spin';
+        tween.active = true;
+        activeClose = close;
+        history.pushState({ project: project.id }, '', url);
+      }
+
+      function stepTween(now) {
+        // lo spin (1 s) e la dissolvenza verso la pagina del progetto (1 s) partono insieme
+        if (tween.phase === 'spin') {
+          const t = Math.min(1, (now - tween.t0) / SPIN_MS);
+          spinQ.setFromAxisAngle(VERTICAL_AXIS, TURNS * 2 * Math.PI * easeInOut(t));
+          model.quaternion.copy(tween.q0).premultiply(spinQ);        // rotazione attorno all'asse verticale del mondo
+          if (t >= 1) { model.quaternion.copy(tween.q0); tween.phase = 'spun'; }
+        }
+        if (!tween.tFade && (tween.ready || now - tween.t0 > 4000)) tween.tFade = now;   // se la pagina tarda oltre 4 s si entra comunque
+        if (tween.tFade) {
+          const t = Math.min(1, (now - tween.tFade) / FADE_MS);
+          tween.frame.style.opacity = String(t);
+          if (t >= 1 && tween.phase !== 'spin') {
+            tween.frame.style.pointerEvents = 'auto';
+            tween.frame.focus();
+            tween.active = false; tween.phase = 'open';
+          }
+        }
+      }
+
+      function close() {
+        if (!tween.frame) return;
+        activeClose = null;
+        const frame = tween.frame;
+        tween.frame = null; tween.active = false; tween.phase = '';
+        window.removeEventListener('message', tween.onMsg);
+        frame.style.pointerEvents = 'none';
+        frame.style.transition = 'opacity .4s ease';
+        frame.style.opacity = '0';
+        setTimeout(() => frame.remove(), 450);
+        ['wheel', 'touchmove', 'keydown'].forEach((ev) => window.removeEventListener(ev, stopScroll));
+        model.quaternion.copy(tween.q0);
+        state.autoRotate = saved ? saved.auto : true;
+        entering = false;
+      }
+
+      function resize() {
+        if (entering) return;
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        if (!w || !h) return;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+
+      function update(dt, now) {
+        if (entering) {                       // durante l'apertura si muove solo il modello cliccato
+          if (tween.active) { stepTween(now); if (state.visible) renderer.render(scene, camera); }
+          return;
+        }
+        camera.position.z += (zoomTarget - camera.position.z) * (1 - Math.pow(0.0005, dt));
+        if (model) {
+          if (state.resetting) {
+            model.quaternion.slerp(initialQuat, 1 - Math.pow(0.001, dt));
+            if (model.quaternion.angleTo(initialQuat) < 0.002) {
+              model.quaternion.copy(initialQuat);
+              state.resetting = false;
+            }
+          } else if (!state.dragging) {
+            model.quaternion.premultiply(spin);
+            spin.slerp(identity, 0.04);
+            if (state.autoRotate) {
+              idleSpin.setFromAxisAngle(VERTICAL_AXIS, (RPM * 2 * Math.PI / 60) * dt);
+              model.quaternion.premultiply(idleSpin);
+            }
+            model.quaternion.normalize();
+          }
+        }
+        if (state.visible) renderer.render(scene, camera);
+      }
+
+      resize();
+      return { resize, update };
+    }
+
+    /* ================= Avvio ================= */
+    function loop() {
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const now = performance.now();
+      viewers.forEach(v => v.update(dt, now));
+      requestAnimationFrame(loop);
+    }
+
+    async function start() {
+      let content;
+      try { content = await loadContent(); }
+      catch (err) {
+        console.error(err);
+        showProblem(['Non riesco a leggere <code>content.json</code> (' + (err && err.message ? err.message : err) + ').',
+                     'Controlla che <code>content.json</code> sia nel repository accanto a <code>index.html</code> e che sia JSON valido.']);
+        return;
+      }
+      const siteTitle = (content.site && content.site.title) || 'Portfolio';
+      document.title = siteTitle;
+      document.getElementById('home-title').textContent = siteTitle;
+      document.getElementById('logo').textContent = siteTitle;
+
+      const main = document.getElementById('main');
+      const projects = content.projects || [];
+      projects.forEach((p, i) => main.appendChild(buildProjectSection(p, i)));
+      main.appendChild(buildContacts(content.contacts || {}));
+
+      main.querySelectorAll('.project').forEach((section, i) => {
+        viewers.push(createViewer(section.querySelector('.stage'), projects[i]));
+      });
+      window.addEventListener('resize', () => viewers.forEach(v => v.resize()));
+      const nav = performance.getEntriesByType('navigation')[0];
+      if (nav && nav.type === 'reload') {                  // ricarica: si riparte sempre dall'alto
+        history.replaceState(null, '', location.pathname + location.search);
+        window.scrollTo(0, 0);
+      } else if (location.hash) {                           // ritorno dalla pagina progetto: posizionati sulla sezione
+        const t = document.getElementById(location.hash.slice(1));
+        if (t) t.scrollIntoView();
+      }
+      loop();
+    }
+    start();
+  </script>
+</body>
+</html>
