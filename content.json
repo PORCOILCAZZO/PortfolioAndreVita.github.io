@@ -5,22 +5,56 @@
   "projects": [
     {
       "id": "banana",
-      "title": "Banana",
-      "subtitle": "Modello 3D interattivo",
+      "title": "Circonvalley",
+      "subtitle": "Cycling Community",
       "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
-      "model": { "kind": "builtin", "name": "banana" },
+      "model": {
+        "kind": "glb",
+        "src": "assets/models/banana-mwuyzysyi0hr/model.glb",
+        "name": "model.glb",
+        "files": [
+          "assets/models/banana-mwuyzysyi0hr/model.glb",
+          "assets/models/banana-mwuyzysyi0hr/tex_u0_v0_diffuse.jpg",
+          "assets/models/banana-mwuyzysyi0hr/tex_u0_v0_normal.jpg"
+        ]
+      },
       "dragDir": -1,
       "images": [
-        "assets/images/placeholder-01.jpg",
-        "assets/images/placeholder-02.jpg",
-        "assets/images/placeholder-03.jpg",
-        "assets/images/placeholder-04.jpg",
-        "assets/images/placeholder-05.jpg",
-        "assets/images/placeholder-06.jpg",
-        "assets/images/placeholder-07.jpg",
-        "assets/images/placeholder-08.jpg",
-        "assets/images/placeholder-09.jpg",
-        "assets/images/placeholder-10.jpg"
+        "assets/images/banana-mwuz5vjy4tt9.jpg",
+        "assets/images/banana-mwuz5vlbnyxw.jpg",
+        "assets/images/banana-mwuz5vmcu9sb.jpg",
+        "assets/images/banana-mwuz5vnkopdu.jpg",
+        "assets/images/banana-mwuz5voj9zux.jpg",
+        "assets/images/banana-mwuz5vpr9ram.jpg",
+        "assets/images/banana-mwuz5vqgygw8.jpg",
+        "assets/images/banana-mwuz5vrc5v33.jpg",
+        "assets/images/banana-mwuz5vsc2t3p.jpg",
+        "assets/images/banana-mwuz5vt8fc1a.jpg",
+        "assets/images/banana-mwuz5vtkdagi.jpg",
+        "assets/images/banana-mwuz5vw68we1.jpg",
+        "assets/images/banana-mwuz5vwws4q8.jpg",
+        "assets/images/banana-mwuz5vycj84c.jpg",
+        "assets/images/banana-mwuz5vz5fhww.jpg",
+        "assets/images/banana-mwuz5w0h3dtg.jpg",
+        "assets/images/banana-mwuz5w26urmy.jpg",
+        "assets/images/banana-mwuz5w3zyc0i.jpg",
+        "assets/images/banana-mwuz5w5oholi.jpg",
+        "assets/images/banana-mwuz5w7fvtom.jpg",
+        "assets/images/banana-mwuz5w9pxhp5.jpg",
+        "assets/images/banana-mwuz5waktk86.jpg",
+        "assets/images/banana-mwuz5wc106qk.jpg",
+        "assets/images/banana-mwuz5wd0why2.jpg",
+        "assets/images/banana-mwuz5wea0cvh.jpg",
+        "assets/images/banana-mwuz5wff0578.jpg",
+        "assets/images/banana-mwuz5wh1fep7.jpg",
+        "assets/images/banana-mwuz5wigqp80.jpg",
+        "assets/images/banana-mwuz5wizet3n.jpg",
+        "assets/images/banana-mwuz5wkt2x4f.jpg",
+        "assets/images/banana-mwuz5wn3366f.jpg",
+        "assets/images/banana-mwuz5wo22rmm.jpg",
+        "assets/images/banana-mwuz5wq4y7w2.jpg",
+        "assets/images/banana-mwuz5wrlwn1g.jpg",
+        "assets/images/banana-mwuz5wsoz2ci.jpg"
       ]
     },
     {
@@ -28,7 +62,10 @@
       "title": "Mela",
       "subtitle": "Modello 3D interattivo",
       "description": "Placeholder del progetto: una breve descrizione di cosa hai fatto, con quali strumenti e qual era l'obiettivo.",
-      "model": { "kind": "builtin", "name": "apple" },
+      "model": {
+        "kind": "builtin",
+        "name": "apple"
+      },
       "dragDir": -1,
       "images": [
         "assets/images/placeholder-06.jpg",
@@ -48,10 +85,33 @@
     "title": "Contatti",
     "note": "(Dati placeholder: da sostituire con i tuoi.)",
     "blocks": [
-      { "label": "Indirizzo", "lines": ["Sua Santità il Papa", "Palazzo Apostolico", "00120 Città del Vaticano"] },
-      { "label": "Sala Stampa della Santa Sede", "lines": ["Via della Conciliazione 54", "00120 Città del Vaticano"] },
-      { "label": "Email", "lines": ["vaticanmedia@spc.va"] },
-      { "label": "Telefono", "lines": ["+39 06 698 921"] }
+      {
+        "label": "Indirizzo",
+        "lines": [
+          "Sua Santità il Papa",
+          "Palazzo Apostolico",
+          "00120 Città del Vaticano"
+        ]
+      },
+      {
+        "label": "Sala Stampa della Santa Sede",
+        "lines": [
+          "Via della Conciliazione 54",
+          "00120 Città del Vaticano"
+        ]
+      },
+      {
+        "label": "Email",
+        "lines": [
+          "vaticanmedia@spc.va"
+        ]
+      },
+      {
+        "label": "Telefono",
+        "lines": [
+          "+39 06 698 921"
+        ]
+      }
     ]
   }
 }
